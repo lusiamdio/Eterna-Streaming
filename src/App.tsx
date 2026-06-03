@@ -9,6 +9,7 @@ import { DownloadsScreen } from './screens/Downloads';
 import { ProfileScreen } from './screens/Profile';
 import { PlayerScreen } from './screens/Player';
 import { PartnerScreen } from './screens/Partner';
+import { AdminScreen } from './screens/Admin';
 
 export default function App() {
   const { screen } = useAppStore();
@@ -25,6 +26,7 @@ export default function App() {
       {screen === 'profile' && <ProfileScreen />}
       {screen === 'player' && <PlayerScreen />}
       {screen === 'partner' && <PartnerScreen />}
+      {screen === 'admin' && <AdminScreen />}
     </>
   );
 }

@@ -225,6 +225,62 @@ function StatusRow({ title, status, type }: any) {
 
 function UploadModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(1);
+  const [hasVideo, setHasVideo] = useState(false);
+  const [hasPoster, setHasPoster] = useState(false);
+  const [hasTrailer, setHasTrailer] = useState(false);
+  
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanComplete, setScanComplete] = useState(false);
+  const [scanResults, setScanResults] = useState<any>(null);
+
+  const runAiScan = () => {
+    setIsScanning(true);
+    
+    // Simulate AI Scan processing time
+    setTimeout(() => {
+      // Generate somewhat random but realistic scores for the criteria
+      // Base score generator that ensures we usually pass but sometimes fail
+      const getScore = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+      
+      const isGood = Math.random() > 0.3; // 70% chance of a good overall score
+      
+      const story = getScore(isGood ? 80 : 60, 100);
+      const production = getScore(isGood ? 80 : 60, 100);
+      const audience = getScore(isGood ? 75 : 55, 95);
+      const commercial = getScore(isGood ? 75 : 50, 95);
+      const technical = getScore(isGood ? 90 : 70, 100); // Technical is usually higher
+      const cultural = getScore(isGood ? 70 : 50, 95);
+      const localization = getScore(isGood ? 85 : 40, 100);
+      
+      // Calculate weighted total
+      const totalScore = (
+        (story * 0.25) +
+        (production * 0.20) +
+        (audience * 0.15) +
+        (commercial * 0.15) +
+        (technical * 0.10) +
+        (cultural * 0.10) +
+        (localization * 0.05)
+      );
+
+      setScanResults({
+        metrics: [
+          { name: "Story Quality", weight: "25%", score: story, pass: story >= 70 },
+          { name: "Production Quality", weight: "20%", score: production, pass: production >= 75 },
+          { name: "Audience Appeal", weight: "15%", score: audience, pass: audience >= 70 },
+          { name: "Commercial Potential", weight: "15%", score: commercial, pass: commercial >= 70 },
+          { name: "Technical Compliance", weight: "10%", score: technical, pass: technical >= 85 },
+          { name: "Cultural Relevance", weight: "10%", score: cultural, pass: cultural >= 60 },
+          { name: "Localization Readiness", weight: "5%", score: localization, pass: localization >= 60 }
+        ],
+        totalScore: Math.round(totalScore),
+        passed: totalScore >= 75
+      });
+      
+      setIsScanning(false);
+      setScanComplete(true);
+    }, 4000);
+  };
   
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
@@ -250,7 +306,7 @@ function UploadModal({ onClose }: { onClose: () => void }) {
                 <input type="text" className="w-full bg-[#222] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red transition-colors" placeholder="Movie or Series title" />
               </div>
               <div className="space-y-1">
-                <label className="text-[12px] text-white/60 uppercase tracking-widest font-semibold">Description</label>
+                <label className="text-[12px] text-white/60 uppercase tracking-widest font-semibold">Description (Synopsis)</label>
                 <textarea rows={4} className="w-full bg-[#222] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red transition-colors" placeholder="Logline or full synopsis..." />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -288,58 +344,162 @@ function UploadModal({ onClose }: { onClose: () => void }) {
 
           {step === 3 && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <h3 className="text-[18px] font-semibold mb-4">Assets Upload</h3>
-              <div className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:bg-white/5 transition-colors cursor-pointer bg-[#222]">
-                <UploadCloud className="w-12 h-12 text-white/40 mx-auto mb-3" />
-                <div className="font-semibold mb-1">Drag and drop your master video file</div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-[18px] font-semibold">Assets Upload</h3>
+                <div className="text-[13px] text-white/60">Required: Video, Poster, Trailer</div>
+              </div>
+              
+              <div 
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer bg-[#222] ${hasVideo ? 'border-[#46d369]/50' : 'border-white/20 hover:bg-white/5'}`}
+                onClick={() => setHasVideo(!hasVideo)}
+              >
+                {hasVideo ? (
+                  <CheckCircle2 className="w-12 h-12 text-[#46d369] mx-auto mb-3" />
+                ) : (
+                  <UploadCloud className="w-12 h-12 text-white/40 mx-auto mb-3" />
+                )}
+                <div className="font-semibold mb-1">{hasVideo ? 'Master Video Uploaded' : 'Drag and drop your master video file'}</div>
                 <div className="text-[12px] text-white/40">ProRes 422, H.264, or MP4 (Max 150GB)</div>
-                <button className="mt-4 bg-white text-black px-4 py-2 rounded font-semibold text-[13px]">Select File</button>
+                {!hasVideo && <button className="mt-4 bg-white text-black px-4 py-2 rounded font-semibold text-[13px]">Select File</button>}
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <div className="border-2 border-dashed border-white/20 rounded-xl p-6 text-center hover:bg-white/5 transition-colors cursor-pointer bg-[#222]">
-                  <Film className="w-6 h-6 text-white/40 mx-auto mb-2" />
+                <div 
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer bg-[#222] ${hasPoster ? 'border-[#46d369]/50' : 'border-white/20 hover:bg-white/5'}`}
+                  onClick={() => setHasPoster(!hasPoster)}
+                >
+                  <Film className={`w-6 h-6 mx-auto mb-2 ${hasPoster ? 'text-[#46d369]' : 'text-white/40'}`} />
                   <div className="font-semibold text-[14px]">Poster Banner</div>
-                  <div className="text-[11px] text-white/40">1920x1080 JPG/PNG</div>
+                  <div className="text-[11px] text-white/40">{hasPoster ? 'Uploaded' : '1920x1080 JPG/PNG'}</div>
                 </div>
-                <div className="border-2 border-dashed border-white/20 rounded-xl p-6 text-center hover:bg-white/5 transition-colors cursor-pointer bg-[#222]">
-                  <PlayCircle className="w-6 h-6 text-white/40 mx-auto mb-2" />
+                <div 
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer bg-[#222] ${hasTrailer ? 'border-[#46d369]/50' : 'border-white/20 hover:bg-white/5'}`}
+                  onClick={() => setHasTrailer(!hasTrailer)}
+                >
+                  <PlayCircle className={`w-6 h-6 mx-auto mb-2 ${hasTrailer ? 'text-[#46d369]' : 'text-white/40'}`} />
                   <div className="font-semibold text-[14px]">Trailer</div>
-                  <div className="text-[11px] text-white/40">Under 2 mins</div>
+                  <div className="text-[11px] text-white/40">{hasTrailer ? 'Uploaded' : 'Under 2 mins'}</div>
                 </div>
               </div>
             </div>
           )}
 
           {step === 4 && (
-            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300 text-center py-10">
-              <div className="w-20 h-20 bg-eterna-red/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle2 className="w-10 h-10 text-eterna-red" />
-              </div>
-              <h3 className="text-2xl font-bold mb-2">Ready for AI QA Scan</h3>
-              <p className="text-white/60 max-w-md mx-auto mb-6">
-                Your content is ready. We will run an automated quality, compliance, and metadata check before submitting it for editorial review.
-              </p>
+            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
               
-              <div className="bg-[#222] border border-white/10 rounded-lg p-4 text-left max-w-md mx-auto space-y-3">
-                 <div className="flex justify-between text-[13px]"><span className="text-white/60">Quality Scan</span> <span className="text-yellow-400">Pending</span></div>
-                 <div className="flex justify-between text-[13px]"><span className="text-white/60">Compliance Scan</span> <span className="text-yellow-400">Pending</span></div>
-                 <div className="flex justify-between text-[13px]"><span className="text-white/60">Rights Validation</span> <span className="text-yellow-400">Pending</span></div>
-              </div>
+              {!isScanning && !scanComplete && (
+                <div className="text-center py-10">
+                  <div className="w-20 h-20 bg-eterna-red/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Film className="w-10 h-10 text-eterna-red" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-2">Ready for AI QA Scan</h3>
+                  <p className="text-white/60 max-w-md mx-auto mb-6">
+                    Your content assets are complete. We will now run our Film Acquisition AI Bot to evaluate story, production, technical compliance, and marketability.
+                  </p>
+                  
+                  <button 
+                    className="bg-eterna-red text-white px-8 py-3 rounded-full font-bold hover:bg-eterna-rose transition-colors text-[16px] shadow-[0_0_20px_rgba(229,9,20,0.3)] hover:scale-105 transform duration-200"
+                    onClick={runAiScan}
+                  >
+                    Start AI Acquisition Scan
+                  </button>
+                </div>
+              )}
+
+              {isScanning && (
+                <div className="text-center py-12">
+                  <div className="relative w-24 h-24 mx-auto mb-8">
+                    <div className="absolute inset-0 border-4 border-white/20 rounded-full"></div>
+                    <div className="absolute inset-0 border-4 border-eterna-red rounded-full border-t-transparent animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center text-white/50">
+                      <Film className="w-8 h-8 animate-pulse" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2 animate-pulse text-white">AI Bot Analyzing Film...</h3>
+                  <p className="text-white/50 text-[14px]">Evaluating storytelling, technical limits, and marketability...</p>
+                </div>
+              )}
+
+              {scanComplete && scanResults && (
+                <div className="animate-in fade-in slide-in-from-bottom-4">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-[20px] font-bold">AI Screening Results</h3>
+                    <div className={`px-4 py-1.5 rounded-full font-bold text-[14px] ${scanResults.passed ? 'bg-[#46d369]/20 text-[#46d369]' : 'bg-eterna-red/20 text-eterna-red'}`}>
+                      Score: {scanResults.totalScore}/100 
+                      <span className="opacity-75 font-medium ml-2 border-l border-current pl-2">
+                        {scanResults.passed ? 'APPROVED' : 'REJECTED'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-[#222] border border-white/10 rounded-xl overflow-hidden mb-6">
+                    <div className="grid grid-cols-12 bg-white/5 text-[12px] font-semibold text-white/50 p-3 uppercase tracking-wider">
+                      <div className="col-span-6">Criteria</div>
+                      <div className="col-span-2 text-center">Weight</div>
+                      <div className="col-span-2 text-center">Score</div>
+                      <div className="col-span-2 text-right">Status</div>
+                    </div>
+                    
+                    <div className="divide-y divide-white/5">
+                      {scanResults.metrics.map((metric: any, idx: number) => (
+                        <div key={idx} className="grid grid-cols-12 p-3 text-[14px] items-center">
+                          <div className="col-span-6 font-medium">{metric.name}</div>
+                          <div className="col-span-2 text-center text-white/50 text-[13px]">{metric.weight}</div>
+                          <div className="col-span-2 text-center font-mono">{metric.score}</div>
+                          <div className="col-span-2 text-right flex justify-end">
+                            {metric.pass ? 
+                              <span className="bg-[#46d369]/20 text-[#46d369] px-2 py-0.5 rounded text-[11px] font-semibold"><CheckCircle2 className="w-3 h-3 inline mr-1" />PASS</span> : 
+                              <span className="bg-eterna-red/20 text-eterna-red px-2 py-0.5 rounded text-[11px] font-semibold"><XCircle className="w-3 h-3 inline mr-1" />FAIL</span>
+                            }
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {!scanResults.passed && (
+                    <div className="bg-eterna-red/10 border border-eterna-red/30 p-4 rounded-lg flex items-start gap-3">
+                      <XCircle className="w-5 h-5 text-eterna-red shrink-0 mt-0.5" />
+                      <div className="text-[14px]">
+                        <p className="font-semibold text-white mb-1">Submission does not meet acquisition threshold (Score &lt; 75)</p>
+                        <p className="text-white/70 text-[13px]">Please review the failed criteria above and improve the content quality, technical compliance, or localization readiness before resubmitting.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
         </div>
         
         <div className="p-6 border-t border-white/10 bg-[#1a1a1a] flex justify-between">
-          {step > 1 ? (
+          {(step > 1 && !isScanning && !scanComplete) ? (
              <button className="px-6 py-2 rounded border border-white/20 font-semibold hover:bg-white/10 transition-colors" onClick={() => setStep(step-1)}>Back</button>
           ) : <div></div>}
           
-          {step < 4 ? (
+          {step < 3 ? (
              <button className="bg-white text-black px-8 py-2 rounded font-bold hover:bg-white/80 transition-colors" onClick={() => setStep(step+1)}>Continue</button>
+          ) : step === 3 ? (
+             <button 
+               className={`px-8 py-2 rounded font-bold transition-colors ${hasVideo && hasPoster && hasTrailer ? 'bg-white text-black hover:bg-white/80' : 'bg-white/20 text-white/40 cursor-not-allowed'}`} 
+               onClick={() => { if(hasVideo && hasPoster && hasTrailer) setStep(step+1); }}
+               disabled={!(hasVideo && hasPoster && hasTrailer)}
+             >
+               Continue
+             </button>
           ) : (
-            <button className="bg-eterna-red text-white px-8 py-2 rounded font-bold hover:bg-eterna-rose transition-colors" onClick={onClose}>Run AI Scan & Submit</button>
+            scanComplete && scanResults?.passed && (
+              <button 
+                className="bg-[#46d369] text-black px-8 py-2 rounded font-bold hover:bg-[#46d369]/80 transition-colors flex items-center gap-2" 
+                onClick={() => {
+                  onClose();
+                  alert("Film successfully submitted to the platform!");
+                }}
+              >
+                <CheckCircle2 className="w-5 h-5" /> Submit to Platform
+              </button>
+            )
           )}
         </div>
       </div>

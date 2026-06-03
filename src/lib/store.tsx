@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CATALOG, DOWNLOADS_INIT } from './data';
 import { Content, Download } from '../types';
 
-export type ScreenType = 'landing' | 'auth' | 'home' | 'search' | 'details' | 'player' | 'live' | 'dl' | 'profile' | 'partner';
+export type ScreenType = 'landing' | 'auth' | 'home' | 'search' | 'details' | 'player' | 'live' | 'dl' | 'profile' | 'partner' | 'admin';
 
 interface User {
   name: string;
