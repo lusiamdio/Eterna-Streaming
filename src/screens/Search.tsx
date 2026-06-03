@@ -44,17 +44,38 @@ export function SearchScreen() {
     : val ? `Results for "${val}"` : currentGenre !== 'All' ? `${currentGenre} Titles` : 'All Titles';
 
   const doVoiceSearch = () => {
-    showToast('🎙 Voice search activated...');
-    setTimeout(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      showToast("Voice search is not supported in this browser.");
+      return;
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      showToast('🎙 Listening...');
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
       if (aiMode) {
-        setMoodSearch("I want something inspiring");
-        handleAiSearch("I want something inspiring");
+        setMoodSearch(transcript);
+        handleAiSearch(transcript);
       } else {
-        setVal('Action');
-        setSearch('Action', 'All');
-        showToast('Searching for "Action"');
+        setVal(transcript);
+        setSearch(transcript, currentGenre);
+        showToast(`Searching for "${transcript}"`);
       }
-    }, 1200);
+    };
+
+    recognition.onerror = (event: any) => {
+      showToast(`Voice search error: ${event.error}`);
+    };
+
+    recognition.start();
   };
 
   const handleAiSearch = (q: string = moodSearch) => {

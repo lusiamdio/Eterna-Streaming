@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CATALOG, DOWNLOADS_INIT } from './data';
 import { Content, Download } from '../types';
+import { supabase } from './supabase';
 
 export type ScreenType = 'landing' | 'auth' | 'home' | 'search' | 'details' | 'player' | 'live' | 'dl' | 'profile' | 'partner' | 'admin';
 
@@ -61,6 +62,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [toastTimeoutId, setToastTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
+  useEffect(() => {
+    if (!supabase) return;
+    
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const parsedName = session.user.email?.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim() || 'User';
+        setState(prev => ({
+          ...prev,
+          user: {
+            name: session.user.user_metadata?.full_name || parsedName,
+            initials: (session.user.user_metadata?.full_name || parsedName)[0].toUpperCase(),
+            email: session.user.email || '',
+            plan: 'Premium'
+          }
+        }));
+      }
+    });
+
+    // Listen to changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const parsedName = session.user.email?.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim() || 'User';
+        setState(prev => ({
+          ...prev,
+          user: {
+            name: session.user.user_metadata?.full_name || parsedName,
+            initials: (session.user.user_metadata?.full_name || parsedName)[0].toUpperCase(),
+            email: session.user.email || '',
+            plan: 'Premium'
+          }
+        }));
+      } else {
+        setState(prev => ({ ...prev, user: null }));
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const showToast = (msg: string) => {
     setState(prev => ({ ...prev, toastMsg: msg }));
     if (toastTimeoutId) clearTimeout(toastTimeoutId);
@@ -90,14 +131,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signIn = (user: User) => setState(prev => ({ ...prev, user }));
-  const signOut = () => setState(prev => ({ 
-    ...prev, 
-    user: null, 
-    myList: [], 
-    liked: [], 
-    history: ['landing'], 
-    screen: 'landing' 
-  }));
+  const signOut = async () => {
+    if (supabase) await supabase.auth.signOut();
+    setState(prev => ({ 
+      ...prev, 
+      user: null, 
+      myList: [], 
+      liked: [], 
+      history: ['landing'], 
+      screen: 'landing' 
+    }));
+  };
 
   const setContent = (c: Content) => setState(prev => ({ ...prev, currentContent: c }));
   const setSearch = (searchQ: string, currentGenre: string) => setState(prev => ({ ...prev, searchQ, currentGenre }));

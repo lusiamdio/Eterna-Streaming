@@ -1,4 +1,4 @@
-import { Search, Bell, Home, Radio, Download, User, ArrowLeft } from "lucide-react";
+import { Search, Bell, Home, Radio, Download, User, ArrowLeft, Plus, Users, LayoutDashboard, PlayCircle } from "lucide-react";
 import { useAppStore, ScreenType } from "../lib/store";
 import React, { useState } from "react";
 
@@ -19,39 +19,46 @@ export function TopNav({
   const [notifOpen, setNotifOpen] = useState(false);
   
   return (
-    <nav className="flex items-center gap-[12px] px-[20px] h-[56px] bg-gradient-to-b from-black/80 to-transparent border-b-0 sticky top-0 z-[100] transition-colors">
+    <>
+    <nav className="hidden md:flex items-center gap-[12px] px-[20px] h-[64px] glass mx-6 mt-4 rounded-2xl sticky top-4 z-[100] transition-colors">
       {showBack && (
-        <button className="flex items-center justify-center w-[34px] h-[34px] rounded-[7px] text-eterna-muted hover:text-eterna-text hover:bg-white/5 transition-all" onClick={goBack}>
+        <button className="flex items-center justify-center w-[34px] h-[34px] rounded-[7px] text-eterna-muted hover:text-eterna-text hover:bg-white/10 transition-all" onClick={goBack}>
           <ArrowLeft className="w-[18px] h-[18px]" />
         </button>
       )}
       
       {!showBack && typeof title === 'string' && title === 'Eterna' ? (
         <div className="flex items-center gap-8">
-          <div className="font-serif text-[30px] font-semibold tracking-tighter text-eterna-red cursor-pointer" onClick={() => go('home')}>
+          <div className="font-sans text-[26px] font-bold tracking-tight text-transparent bg-clip-text bg-grad cursor-pointer" onClick={() => go('home')}>
             {title}
           </div>
-          <div className="hidden md:flex gap-6 text-[13px] font-medium text-eterna-muted">
-             <div className="text-white cursor-pointer hover:text-white/80 transition-colors" onClick={() => go('home')}>Home</div>
-             <div className="cursor-pointer hover:text-white/80 transition-colors" onClick={() => go('home')}>Live Shows</div>
-             <div className="cursor-pointer hover:text-white/80 transition-colors" onClick={() => go('search')}>Movies</div>
-             <div className="cursor-pointer hover:text-white/80 transition-colors" onClick={() => go('live')}>New & Popular</div>
-             <div className="cursor-pointer hover:text-white/80 transition-colors" onClick={() => go('dl')}>My List</div>
+          <div className="hidden lg:flex gap-6 text-[14px] font-semibold text-eterna-muted">
+             <div className="text-white cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('home')}>Discover</div>
+             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('home')}>Originals</div>
+             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('search')}>Films</div>
+             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('home')}>Series</div>
+             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('home')}>Learning</div>
+             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('live')}>Live</div>
+             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('home')}>Community</div>
           </div>
         </div>
       ) : (
-        <div className={typeof title === 'string' && title !== 'Eterna' ? "font-serif text-[16px] tracking-[1px]" : ""}>
+        <div className={typeof title === 'string' && title !== 'Eterna' ? "font-sans font-bold text-[18px] tracking-[1px] text-white" : ""}>
           {title}
         </div>
       )}
 
-      {/* Nav Links for Home specific layout would go here, kept simpler for general use */}
-      
       <div className="flex-1" />
 
       {showSearch && (
-        <div className="hidden sm:flex items-center gap-[7px] bg-eterna-card border border-eterna-border rounded-[7px] px-[12px] py-[6px] cursor-pointer text-[12px] text-eterna-muted hover:border-white/20 transition-all" onClick={() => go('search')}>
-          <Search className="w-[14px] h-[14px]" /> Search
+        <div className="hidden sm:flex items-center gap-3">
+          <div className="flex items-center gap-[7px] bg-white/5 border border-white/10 rounded-full px-[16px] py-[8px] cursor-pointer text-[13px] text-eterna-muted hover:border-eterna-rose hover:bg-white/10 transition-all font-mono" onClick={() => go('search')}>
+            <Search className="w-[16px] h-[16px]" /> INITIALIZE SEARCH 
+          </div>
+
+          <div className="flex items-center gap-[7px] bg-grad/20 border border-eterna-rose/50 rounded-full px-[16px] py-[8px] cursor-pointer text-[13px] text-white hover:border-eterna-rose transition-all shadow-[0_0_15px_rgba(225,29,72,0.3)]">
+            <span className="w-2 h-2 rounded-full bg-eterna-rose animate-ping" /> NOVA AI
+          </div>
         </div>
       )}
 
@@ -59,26 +66,26 @@ export function TopNav({
 
       {showProfile && user && (
         <div className="relative">
-          <button className="flex items-center justify-center w-[34px] h-[34px] rounded-[7px] text-eterna-muted hover:text-eterna-text hover:bg-white/5 transition-all" onClick={() => setNotifOpen(!notifOpen)}>
+          <button className="flex items-center justify-center w-[40px] h-[40px] rounded-full text-eterna-muted hover:text-eterna-text hover:bg-white/10 transition-all" onClick={() => setNotifOpen(!notifOpen)}>
             <Bell className="w-[18px] h-[18px]" />
-            <div className="absolute top-[3px] right-[5px] w-[7px] h-[7px] bg-eterna-rose rounded-full border-[1.5px] border-eterna-bg" />
+            <div className="absolute top-[8px] right-[10px] w-[8px] h-[8px] bg-eterna-violet rounded-full border-[1.5px] border-eterna-bg shadow-[0_0_10px_rgba(0,214,143,0.8)]" />
           </button>
           
           {notifOpen && (
-            <div className="absolute top-[45px] right-0 w-[280px] bg-eterna-surface border border-eterna-border rounded-[11px] z-[150] overflow-hidden shadow-2xl">
-              <div className="px-[16px] py-[12px] border-b border-eterna-border text-[13px] font-semibold flex justify-between items-center bg-eterna-surface">
-                Notifications 
-                <span className="text-[11px] text-eterna-rose cursor-pointer font-normal" onClick={() => { setNotifOpen(false); showToast("All notifications marked as read");}}>Mark all read</span>
+            <div className="absolute top-[50px] right-0 w-[300px] glass rounded-2xl z-[150] overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.8)] border border-white/10">
+              <div className="px-[16px] py-[12px] border-b border-white/10 text-[11px] font-mono tracking-widest flex justify-between items-center text-white/50 bg-black/40">
+                SYSTEM ALERTS
+                <span className="text-eterna-rose cursor-pointer font-bold hover:underline" onClick={() => { setNotifOpen(false); showToast("All notifications marked as read");}}>ACKNOWLEDGE ALL</span>
               </div>
-              <div className="flex flex-col">
-                <div className="p-[11px] px-[16px] border-b border-eterna-border cursor-pointer hover:bg-white/5 transition-colors" onClick={() => { setNotifOpen(false); showToast('Nebula Rising S1 Ep 4 is now available!'); go('home'); }}>
-                  <div className="flex gap-[8px] items-start">
-                    <div className="w-[6px] h-[6px] rounded-full bg-eterna-rose shrink-0 mt-[4px]" />
+              <div className="flex flex-col bg-black/60 backdrop-blur-xl">
+                <div className="p-[14px] px-[16px] border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => { setNotifOpen(false); showToast('Nebula Rising S1 Ep 4 is now available!'); go('home'); }}>
+                  <div className="flex gap-[12px] items-start">
+                    <div className="w-[8px] h-[8px] rounded-full bg-eterna-rose shrink-0 mt-[4px] shadow-[0_0_8px_rgba(60,174,255,0.8)]" />
                     <div className="flex-1">
-                      <div className="font-medium text-[12px]">New Episode Available</div>
-                      <div className="text-eterna-muted text-[11px] mt-[1px]">Nebula Rising — S1E4 just dropped</div>
+                      <div className="font-bold text-[13px] text-white">Content Sync Complete</div>
+                      <div className="text-eterna-muted text-[11px] font-mono mt-[4px] leading-tight text-white/60">Nebula Rising — S1E4 available on global CDN</div>
                     </div>
-                    <div className="text-[10px] text-eterna-hint">2m</div>
+                    <div className="text-[10px] font-mono text-eterna-rose font-bold">2m</div>
                   </div>
                 </div>
               </div>
@@ -88,13 +95,54 @@ export function TopNav({
       )}
 
       {showProfile && user && (
-        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-eterna-gold to-white p-[1px] flex-shrink-0 cursor-pointer" onClick={() => go('profile')}>
-          <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-[10px] font-bold text-white">
-            {user.initials}
+        <div className="flex items-center gap-3">
+          <div className="hidden lg:flex flex-col items-end">
+            <span className="text-[10px] font-mono font-bold text-eterna-gold tracking-widest uppercase">Lvl 42 Viewer</span>
+            <div className="w-16 h-1 mt-1 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-eterna-gold w-[80%] shadow-[0_0_5px_rgba(245,176,65,0.8)]" />
+            </div>
+          </div>
+          <div className="w-[36px] h-[36px] rounded-full bg-gradient-to-tr from-eterna-gold to-white p-[2px] flex-shrink-0 cursor-pointer hover:scale-110 transition-transform shadow-[0_0_10px_rgba(245,176,65,0.4)]" onClick={() => go('profile')}>
+            <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-[12px] font-bold text-white">
+              {user.initials}
+            </div>
           </div>
         </div>
       )}
     </nav>
+    <MobileBottomNav />
+    </>
+  );
+}
+
+export function MobileBottomNav() {
+  const { go } = useAppStore();
+  
+  return (
+    <div className="md:hidden fixed bottom-6 left-4 right-4 glass-panel rounded-2xl flex items-center justify-between px-6 py-3 z-[100] border-t border-white/10 shadow-2xl">
+        <button onClick={() => go('home')} className="flex flex-col items-center gap-1 text-white hover:text-eterna-rose transition-colors">
+            <Home className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Home</span>
+        </button>
+        <button onClick={() => go('search')} className="flex flex-col items-center gap-1 text-white/50 hover:text-white transition-colors">
+            <Search className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Discover</span>
+        </button>
+        <button onClick={() => go('partner')} className="relative group">
+            <div className="w-14 h-14 rounded-full bg-grad flex items-center justify-center -mt-8 shadow-[0_0_20px_rgba(60,174,255,0.4)] group-hover:scale-110 transition-transform border border-white/20">
+                <Plus className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-[10px] font-bold text-white absolute -bottom-4 left-1/2 -translate-x-1/2">Create</span>
+        </button>
+        <button onClick={() => go('home')} className="flex flex-col items-center gap-1 text-white/50 hover:text-white transition-colors">
+            <Users className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Community</span>
+        </button>
+        <button onClick={() => go('profile')} className="flex flex-col items-center gap-1 text-white/50 hover:text-white transition-colors">
+            <User className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Profile</span>
+        </button>
+    </div>
   );
 }
 

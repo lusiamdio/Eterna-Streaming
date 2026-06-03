@@ -115,6 +115,20 @@ function Dashboard() {
     { name: 'Action', value: 510000 },
     { name: 'Business', value: 210000 },
   ];
+  const mrrData = [
+    { month: 'Jul', mrr: 88.5 },
+    { month: 'Aug', mrr: 92.4 },
+    { month: 'Sep', mrr: 95.1 },
+    { month: 'Oct', mrr: 98.8 },
+    { month: 'Nov', mrr: 102.3 },
+    { month: 'Dec', mrr: 108.9 },
+    { month: 'Jan', mrr: 110.1 },
+    { month: 'Feb', mrr: 112.5 },
+    { month: 'Mar', mrr: 115.8 },
+    { month: 'Apr', mrr: 118.2 },
+    { month: 'May', mrr: 121.5 },
+    { month: 'Jun', mrr: 125.0 },
+  ];
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300">
@@ -128,7 +142,7 @@ function Dashboard() {
         <MetricCard label="Churn Rate" value="2.1%" status="-0.3% Improved" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2 bg-[#111] border border-white/5 p-6 rounded-xl">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold">Content Performance & ROI by Genre</h2>
@@ -156,6 +170,25 @@ function Dashboard() {
              <RegionRow name="Asia" val="2.9M subs" pct="18" />
              <RegionRow name="Middle East" val="1.1M subs" pct="8" />
           </div>
+        </div>
+      </div>
+
+      <div className="bg-[#111] border border-white/5 p-6 rounded-xl h-[350px] flex flex-col">
+        <h2 className="text-xl font-bold mb-4">Monthly Recurring Revenue (MRR) Trends</h2>
+        <div className="flex-1 w-full min-h-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={mrrData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+              <XAxis dataKey="month" stroke="#888" tick={{fontSize: 12}} />
+              <YAxis stroke="#888" tick={{fontSize: 12}} tickFormatter={(val) => `$${val}M`} />
+              <Tooltip 
+                contentStyle={{backgroundColor: '#111', borderColor: '#333', borderRadius: '8px'}} 
+                itemStyle={{color: '#fff'}}
+                formatter={(value: any) => [`$${value}M`, 'MRR']} 
+              />
+              <Line type="monotone" dataKey="mrr" stroke="#E50914" strokeWidth={3} dot={{r: 4, fill: '#E50914'}} activeDot={{r: 6}} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>
@@ -501,6 +534,22 @@ const BookOpenIcon = ({className}:any) => <svg className={className} fill="none"
 // ----------------------------------------------------
 
 function AudienceIntelligence() {
+  const [variants, setVariants] = useState([
+    { id: 1, name: 'Variant A', ctr: 30, url: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=300&auto=format&fit=crop' },
+    { id: 2, name: 'Variant B', ctr: 70, url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=300&auto=format&fit=crop' }
+  ]);
+  const [activeVariant, setActiveVariant] = useState(1);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const url = URL.createObjectURL(e.target.files[0]);
+      const newVar = { id: Date.now(), name: `Variant ${String.fromCharCode(65 + variants.length)}`, ctr: 0, url };
+      setVariants([...variants, newVar]);
+      setActiveVariant(newVar.id);
+    }
+  };
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300">
       <h1 className="text-3xl font-bold mb-2">Audience Intelligence & A/B Testing</h1>
@@ -536,21 +585,56 @@ function AudienceIntelligence() {
           </div>
         </div>
 
-        <div className="bg-[#111] border border-white/5 p-6 rounded-xl">
+        <div className="bg-[#111] border border-white/5 p-6 rounded-xl flex flex-col">
            <div className="flex justify-between items-center mb-6">
-             <h2 className="text-xl font-bold">A/B Testing Framework</h2>
-             <span className="text-[12px] text-white/50">3 Active Experiments</span>
+             <h2 className="text-xl font-bold">Thumbnail A/B Testing Manager</h2>
+             <span className="text-[12px] text-white/50 font-mono">Title: "Stranger Things"</span>
            </div>
-           <div className="space-y-4">
-              <div className="p-4 border border-white/10 rounded-lg bg-[#0a0a0a]">
-                 <div className="flex justify-between items-center mb-3">
-                    <div className="text-[13px] font-bold">Thumbnail Optimization: "Stranger Things"</div>
-                    <span className="text-green-400 font-bold text-[13px] bg-green-400/10 px-2 py-0.5 rounded">+14.2% CTR</span>
+           
+           <div className="flex gap-4 mb-4">
+             {/* Preview Pane */}
+             <div className="w-[180px] h-[270px] bg-[#1a1a1a] border border-white/10 rounded-lg overflow-hidden shrink-0 relative flex items-center justify-center group">
+               {variants.find(v => v.id === activeVariant)?.url ? (
+                 <img src={variants.find(v => v.id === activeVariant)?.url} className="w-full h-full object-cover" alt="Variant Preview" />
+               ) : (
+                 <span className="text-white/30 text-[12px]">No Image</span>
+               )}
+               <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/80 rounded text-[10px] font-bold text-white uppercase backdrop-blur">
+                  Live Preview
+               </div>
+             </div>
+             
+             {/* List Pane */}
+             <div className="flex-1 flex flex-col min-h-0 space-y-2 overflow-y-auto pr-2 custom-scrollbar">
+               {variants.map(v => (
+                 <div 
+                   key={v.id} 
+                   onClick={() => setActiveVariant(v.id)}
+                   className={`p-3 rounded-lg flex justify-between items-center cursor-pointer transition-colors border ${activeVariant === v.id ? 'bg-white/10 border-white/30' : 'bg-[#0a0a0a] border-white/5 hover:border-white/20'}`}
+                 >
+                   <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 rounded bg-[#222] overflow-hidden shrink-0">
+                       {v.url && <img src={v.url} className="w-full h-full object-cover" alt={v.name} />}
+                     </div>
+                     <div>
+                       <div className="text-[13px] font-bold">{v.name}</div>
+                       <div className="text-[11px] text-white/50">{v.ctr}% Traffic Allocation</div>
+                     </div>
+                   </div>
+                   <div className="flex flex-col items-end gap-1">
+                      {v.ctr > 50 && <span className="bg-green-500/20 text-green-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Winning</span>}
+                   </div>
                  </div>
-                 <div className="text-[11px] text-white/50 mb-3">The AI Recommendation System is favoring Variant B (Dark Aesthetic) globally over Variant A (Character Focus).</div>
-                 <div className="w-full bg-white/10 h-1.5 rounded-full flex"><div className="bg-blue-500 h-1.5 rounded-l-full" style={{width:'30%'}}></div><div className="bg-green-500 h-1.5 rounded-r-full" style={{width:'70%'}}></div></div>
-                 <div className="flex justify-between text-[10px] text-white/40 mt-1"><span>Variant A (30%)</span><span>Variant B (70%)</span></div>
-              </div>
+               ))}
+               
+               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} />
+               <button 
+                 onClick={() => fileInputRef.current?.click()}
+                 className="p-3 mt-2 rounded-lg border border-dashed border-white/20 text-white/50 hover:bg-white/5 hover:text-white transition-colors text-[13px] font-medium flex items-center justify-center"
+               >
+                 + Upload New Variant
+               </button>
+             </div>
            </div>
         </div>
       </div>
@@ -606,6 +690,15 @@ function AdManagement() {
 }
 
 function StreamingOperations() {
+  const cdnData = [
+    { time: '10:00', bandwidth: 42.1, buffer: 0.5, viewers: 1.10 },
+    { time: '10:05', bandwidth: 45.3, buffer: 0.4, viewers: 1.15 },
+    { time: '10:10', bandwidth: 48.2, buffer: 0.6, viewers: 1.20 },
+    { time: '10:15', bandwidth: 52.4, buffer: 0.4, viewers: 1.22 },
+    { time: '10:20', bandwidth: 48.8, buffer: 0.3, viewers: 1.24 },
+    { time: '10:25', bandwidth: 48.2, buffer: 0.4, viewers: 1.24 },
+  ];
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300">
       <h1 className="text-3xl font-bold mb-2">CDN & Live Streaming Operations</h1>
@@ -616,6 +709,37 @@ function StreamingOperations() {
         <MetricCard label="Global Bandwidth" value="48.2 Tbps" status="High Load (Edge)" type="warning" />
         <MetricCard label="Avg Buffer Rate" value="0.4%" status="Excellent" />
         <MetricCard label="API Latency" value="112ms" status="Optimal" />
+      </div>
+
+      <div className="bg-[#111] border border-white/5 rounded-xl p-6 mb-8 h-[350px] flex flex-col">
+        <h2 className="text-xl font-bold mb-4">Real-Time CDN Performance & Telemetry</h2>
+        <div className="flex-1 w-full min-h-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={cdnData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorBw" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#46d369" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#46d369" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorBuf" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#E50914" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#E50914" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+              <XAxis dataKey="time" stroke="#888" tick={{fontSize: 12}} />
+              <YAxis yAxisId="left" stroke="#888" tick={{fontSize: 12}} orientation="left" />
+              <YAxis yAxisId="right" stroke="#888" tick={{fontSize: 12}} orientation="right" />
+              <Tooltip 
+                contentStyle={{backgroundColor: '#111', borderColor: '#333', borderRadius: '8px'}} 
+                itemStyle={{color: '#fff'}}
+              />
+              <Legend verticalAlign="top" height={36} iconType="circle" />
+              <Area yAxisId="left" type="monotone" dataKey="bandwidth" stroke="#46d369" fillOpacity={1} fill="url(#colorBw)" name="Bandwidth (Tbps)" />
+              <Area yAxisId="right" type="monotone" dataKey="buffer" stroke="#E50914" fillOpacity={1} fill="url(#colorBuf)" name="Buffer Rate (%)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -777,6 +901,35 @@ function RevenueIntelligence() {
 }
 
 function AiIntelligence() {
+  const [messages, setMessages] = useState<any[]>([
+    { role: 'user', text: 'Show me the top 20 films in Africa this month and predict the next big genre.' },
+    { role: 'ai', text: 'Analysis Complete:\n* African action-thrillers saw a 140% spike in watch-hours across Nigeria, SA, and Kenya.\n* "City of Shadows" is the #1 performer, generating $2.1M AVOD revenue.\n* AI Prediction: Localized Sci-Fi will be the dominant breakout genre next quarter due to search semantic overlaps.' }
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input;
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/gemini/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: userMsg })
+      });
+      const data = await res.json();
+      setMessages(prev => [...prev, { role: 'ai', text: data.text }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { role: 'ai', text: 'Error connecting to Command Center. Please verify API configuration.' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300">
       <h1 className="text-3xl font-bold mb-2">AI Executive Command Center</h1>
@@ -788,26 +941,46 @@ function AiIntelligence() {
         <div className="bg-[#111] border border-white/5 p-6 rounded-xl flex flex-col h-[500px]">
           <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Brain className="text-eterna-red w-5 h-5"/> Conversational BI Assistant</h2>
           <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
-            <div className="flex gap-3 items-start">
-              <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 font-bold text-[12px]">SA</div>
-              <div className="bg-[#222] p-3 rounded-lg rounded-tl-none text-[14px]">Show me the top 20 films in Africa this month and predict the next big genre.</div>
-            </div>
-            <div className="flex gap-3 items-start">
-              <div className="w-8 h-8 rounded-full bg-eterna-red/20 text-eterna-red flex items-center justify-center shrink-0"><Brain className="w-4 h-4"/></div>
-              <div className="bg-eterna-red/10 border border-eterna-red/20 p-4 rounded-lg rounded-tl-none text-[14px] text-white/90">
-                <p className="mb-3 font-semibold text-eterna-red">Analysis Complete:</p>
-                <ul className="list-disc pl-5 space-y-2 mb-4 text-[13px] text-white/80">
-                   <li>African action-thrillers saw a <strong className="text-white">140% spike</strong> in watch-hours across Nigeria, SA, and Kenya.</li>
-                   <li>"City of Shadows" is the #1 performer, generating $2.1M AVOD revenue.</li>
-                   <li><strong className="text-white">AI Prediction:</strong> Localized Sci-Fi will be the dominant breakout genre next quarter due to search semantic overlaps.</li>
-                </ul>
-                <button className="px-4 py-2 bg-eterna-red text-white font-bold text-[12px] rounded hover:bg-eterna-rose transition-colors">Action: View Target Acquisitions</button>
+            {messages.map((m, i) => (
+              <div key={i} className="flex gap-3 items-start">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-[12px] ${m.role === 'user' ? 'bg-blue-500/20 text-blue-400' : 'bg-eterna-red/20 text-eterna-red'}`}>
+                  {m.role === 'user' ? 'SA' : <Brain className="w-4 h-4"/>}
+                </div>
+                <div className={`${m.role === 'user' ? 'bg-[#222]' : 'bg-eterna-red/10 border border-eterna-red/20'} p-3 rounded-lg rounded-tl-none text-[14px] text-white/90 whitespace-pre-wrap`}>
+                  {m.text}
+                </div>
               </div>
-            </div>
+            ))}
+            {loading && (
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-full bg-eterna-red/20 text-eterna-red flex items-center justify-center shrink-0"><Brain className="w-4 h-4"/></div>
+                <div className="bg-eterna-red/10 border border-eterna-red/20 p-3 rounded-lg rounded-tl-none text-[14px] text-white/90">
+                  <div className="flex gap-1">
+                     <span className="w-1.5 h-1.5 bg-eterna-red rounded-full animate-bounce"></span>
+                     <span className="w-1.5 h-1.5 bg-eterna-red rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></span>
+                     <span className="w-1.5 h-1.5 bg-eterna-red rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div className="relative mt-auto">
-            <input type="text" placeholder="e.g., Which creators should we sign next?" className="w-full bg-[#1a1a1a] border border-white/10 rounded-full py-3.5 pl-6 pr-12 text-[14px] outline-none focus:border-eterna-red shadow-inner transition-colors" />
-            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-eterna-red hover:bg-eterna-rose rounded-full text-white transition-colors"><Zap className="w-4 h-4"/></button>
+            <input 
+              type="text" 
+              placeholder="e.g., Which creators should we sign next?" 
+              className="w-full bg-[#1a1a1a] border border-white/10 rounded-full py-3.5 pl-6 pr-12 text-[14px] outline-none focus:border-eterna-red shadow-inner transition-colors disabled:opacity-50"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+              disabled={loading}
+            />
+            <button 
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-eterna-red hover:bg-eterna-rose rounded-full text-white transition-colors disabled:opacity-50"
+              onClick={sendMessage}
+              disabled={loading}
+            >
+              <Zap className="w-4 h-4"/>
+            </button>
           </div>
         </div>
 

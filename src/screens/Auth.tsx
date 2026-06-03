@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useAppStore } from "../lib/store";
 import { BottomNav } from "../components/Navigation";
+import { supabase } from "../lib/supabase";
 
 export function AuthScreen() {
   const { go, signIn, showToast } = useAppStore();
@@ -11,49 +12,89 @@ export function AuthScreen() {
   const [pw, setPw] = useState('');
   const [plan, setPlan] = useState<'basic'|'std'|'prem'>('std');
   const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const doSignIn = () => {
-    if (email === 'simao@neurogrowthlabs.co.za' && pw === 'EternaShowTime2@') {
-      setErr('');
-      signIn({
-        name: 'Super Admin',
-        initials: 'SA',
-        email,
-        plan: 'Premium'
-      });
-      showToast('Welcome, Super Administrator.');
-      go('admin');
-      return;
-    }
-
+  const doSignIn = async () => {
     if (!email || !pw || !email.includes('@')) {
       setErr('Invalid email or password.');
       return;
     }
     setErr('');
-    const parsedName = email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim() || 'User';
-    signIn({
-      name: parsedName,
-      initials: parsedName[0].toUpperCase(),
-      email,
-      plan: 'Premium'
-    });
+
+    if (email === 'simao@neurogrowthlabs.co.za') {
+      if (pw === 'EternaShowTime2@') {
+        signIn({
+          name: 'Super Admin',
+          initials: 'SA',
+          email,
+          plan: 'Premium'
+        });
+        showToast('Welcome, Super Administrator.');
+        go('admin');
+        return;
+      } else {
+        setErr('Invalid email or password.');
+        return;
+      }
+    }
+
+    if (supabase) {
+      setLoading(true);
+      const { error, data } = await supabase.auth.signInWithPassword({ email, password: pw });
+      setLoading(false);
+      if (error) {
+        setErr(error.message);
+        return;
+      }
+    } else {
+      const parsedName = email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim() || 'User';
+      signIn({
+        name: parsedName,
+        initials: parsedName[0].toUpperCase(),
+        email,
+        plan: 'Premium'
+      });
+    }
+
     showToast('Welcome back!');
     go('home');
   };
 
-  const doSignUp = () => {
+  const doSignUp = async () => {
     if (!name || !email || !email.includes('@') || pw.length < 6) {
       setErr('Please fill all fields correctly.');
       return;
     }
     setErr('');
-    signIn({
-      name,
-      initials: name[0].toUpperCase(),
-      email,
-      plan: plan === 'prem' ? 'Premium' : plan === 'std' ? 'Standard' : 'Basic'
-    });
+
+    if (email === 'simao@neurogrowthlabs.co.za') {
+      setErr('This email address is restricted.');
+      return;
+    }
+
+    if (supabase) {
+      setLoading(true);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password: pw,
+        options: {
+          data: { full_name: name, plan }
+        }
+      });
+      setLoading(false);
+      if (error) {
+        setErr(error.message);
+        return;
+      }
+    } else {
+      signIn({
+        name,
+        initials: name[0].toUpperCase(),
+        email,
+        plan: plan === 'prem' ? 'Premium' : plan === 'std' ? 'Standard' : 'Basic'
+      });
+    }
+
     showToast('Welcome to Eterna! Enjoy 30 days free.');
     go('home');
   };
@@ -113,8 +154,8 @@ export function AuthScreen() {
 
               {err && <div className="text-eterna-red text-[13px] mb-[16px] p-[10px_12px] bg-[#e87c03]/10 rounded-[4px]">{err}</div>}
 
-              <button className="w-full flex items-center justify-center gap-[7px] p-[14px] rounded-[4px] font-bold text-[16px] bg-eterna-red text-white hover:bg-eterna-rose transition-colors mb-3" onClick={doSignIn}>
-                Sign In
+              <button disabled={loading} className="w-full flex items-center justify-center gap-[7px] p-[14px] rounded-[4px] font-bold text-[16px] bg-eterna-red text-white hover:bg-eterna-rose transition-colors mb-3 disabled:opacity-50" onClick={doSignIn}>
+                {loading ? 'Signing in...' : 'Sign In'}
               </button>
               
               <p className="text-center text-[13px] text-eterna-muted cursor-pointer hover:underline mb-12" onClick={() => showToast('Password reset email sent!')}>
@@ -155,8 +196,8 @@ export function AuthScreen() {
 
               {err && <div className="text-eterna-red text-[13px] mb-[16px] p-[10px_12px] bg-[#e87c03]/10 rounded-[4px]">{err}</div>}
 
-              <button className="w-full flex items-center justify-center gap-[7px] p-[14px] rounded-[4px] font-bold text-[16px] bg-eterna-red text-white hover:bg-eterna-rose transition-colors" onClick={doSignUp}>
-                Sign Up
+              <button disabled={loading} className="w-full flex items-center justify-center gap-[7px] p-[14px] rounded-[4px] font-bold text-[16px] bg-eterna-red text-white hover:bg-eterna-rose transition-colors disabled:opacity-50" onClick={doSignUp}>
+                {loading ? 'Creating Account...' : 'Sign Up'}
               </button>
             </div>
           )}

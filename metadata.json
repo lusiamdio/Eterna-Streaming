@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "Eterna TV",
+  "description": "A premium streaming operating system and AVOD platform featuring an AI Executive Command Center.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
