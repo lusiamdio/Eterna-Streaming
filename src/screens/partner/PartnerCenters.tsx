@@ -561,19 +561,19 @@ export function AllianceCenter() {
          <div className="absolute top-0 right-0 w-64 h-64 bg-eterna-rose/5 blur-3xl rounded-full group-hover:bg-eterna-rose/10 transition-colors pointer-events-none" />
          <h2 className="font-bold text-xl mb-6 uppercase tracking-wider flex items-center gap-2"><Briefcase className="w-5 h-5 text-indigo-400" /> Collaboration Marketplace</h2>
          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-black/40 p-6 border border-white/5 rounded-2xl text-center hover:border-indigo-400/50 hover:bg-indigo-400/5 transition-all cursor-pointer">
+            <div onClick={() => setActiveModal('market-editors')} className="bg-black/40 p-6 border border-white/5 rounded-2xl text-center hover:border-indigo-400/50 hover:bg-indigo-400/5 transition-all cursor-pointer">
                <div className="font-bold mb-2 text-lg">Editors Needed</div>
                <div className="text-xs uppercase tracking-widest text-indigo-400 font-bold">84 Open Roles</div>
             </div>
-            <div className="bg-black/40 p-6 border border-white/5 rounded-2xl text-center hover:border-eterna-rose/50 hover:bg-eterna-rose/5 transition-all cursor-pointer">
+            <div onClick={() => setActiveModal('market-directors')} className="bg-black/40 p-6 border border-white/5 rounded-2xl text-center hover:border-eterna-rose/50 hover:bg-eterna-rose/5 transition-all cursor-pointer">
                <div className="font-bold mb-2 text-lg">Directors Wanted</div>
                <div className="text-xs uppercase tracking-widest text-eterna-rose font-bold">12 Projects</div>
             </div>
-            <div className="bg-black/40 p-6 border border-white/5 rounded-2xl text-center hover:border-green-400/50 hover:bg-green-400/5 transition-all cursor-pointer">
+            <div onClick={() => setActiveModal('market-cinematographers')} className="bg-black/40 p-6 border border-white/5 rounded-2xl text-center hover:border-green-400/50 hover:bg-green-400/5 transition-all cursor-pointer">
                <div className="font-bold mb-2 text-lg">Cinematographers</div>
                <div className="text-xs uppercase tracking-widest text-green-400 font-bold">34 Requests</div>
             </div>
-            <div className="bg-black/40 p-6 border border-white/5 rounded-2xl text-center hover:border-blue-400/50 hover:bg-blue-400/5 transition-all cursor-pointer">
+            <div onClick={() => setActiveModal('market-voice')} className="bg-black/40 p-6 border border-white/5 rounded-2xl text-center hover:border-blue-400/50 hover:bg-blue-400/5 transition-all cursor-pointer">
                <div className="font-bold mb-2 text-lg">Voice Artists</div>
                <div className="text-xs uppercase tracking-widest text-blue-400 font-bold">115 Auditions</div>
             </div>
@@ -582,6 +582,7 @@ export function AllianceCenter() {
 {activeModal === 'network' && <PartnerNetworkModal onClose={() => setActiveModal(null)} />}
 {activeModal === 'invest' && <InvestmentHubModal onClose={() => setActiveModal(null)} />}
 {activeModal === 'messaging' && <MessagingCenterModal onClose={() => setActiveModal(null)} />}
+{activeModal && activeModal.startsWith('market-') && <CollabMarketplaceModal category={activeModal.replace('market-', '')} onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
@@ -825,6 +826,81 @@ function MessagingCenterModal({ onClose }: { onClose: () => void }) {
                </div>
             </div>
          </div>
+      </div>
+    </div>
+  );
+}
+
+function CollabMarketplaceModal({ category, onClose }: { category: string, onClose: () => void }) {
+  const getDetails = () => {
+    switch(category) {
+      case 'editors': return {
+        title: 'Editors Needed',
+        icon: '🎬',
+        roles: [
+          { project: 'Ubuntu Rising', type: 'Lead Editor', rate: '$5k - $8k', status: 'Urgent' },
+          { project: 'Lagos Nights', type: 'Colorist', rate: '$3k', status: 'Open' },
+          { project: 'The Trade', type: 'VFX Compositor', rate: '$10k', status: 'Reviewing' }
+        ]
+      };
+      case 'directors': return {
+        title: 'Directors Wanted',
+        icon: '🎥',
+        roles: [
+          { project: 'Savannah Series', type: 'Series Director', rate: 'Negotiable', status: 'Open' },
+          { project: 'Echoes of Time', type: '2nd Unit Director', rate: '$15k', status: 'Urgent' }
+        ]
+      };
+      case 'cinematographers': return {
+        title: 'Cinematographers',
+        icon: '📹',
+        roles: [
+          { project: 'Kigali Dawn (Doc)', type: 'DoP', rate: '$6k', status: 'Open' },
+          { project: 'The Market (Short)', type: 'Camera Op', rate: '$1.5k', status: 'Urgent' }
+        ]
+      };
+      case 'voice': return {
+        title: 'Voice Artists',
+        icon: '🎙️',
+        roles: [
+          { project: 'Ancestors (Animation)', type: 'Lead Voice', rate: '$2k', status: 'Open' },
+          { project: 'Naja Commercial', type: 'Narrator', rate: '$500', status: 'Reviewing' }
+        ]
+      };
+      default: return { title: 'Marketplace', icon: '💼', roles: [] };
+    }
+  };
+
+  const details = getDetails();
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in" onClick={onClose}>
+      <div className="bg-[#111] border border-white/10 rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl relative" onClick={e => e.stopPropagation()}>
+        <div className="sticky top-0 bg-[#111]/90 backdrop-blur border-b border-white/10 p-6 flex justify-between items-center z-10">
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-2">{details.icon} {details.title}</h2>
+            <p className="text-white/50 text-sm mt-1">Browse open roles and apply across the Eterna network.</p>
+          </div>
+          <button onClick={onClose} className="text-white/50 hover:text-white bg-white/5 p-2 rounded-full"><X className="w-5 h-5"/></button>
+        </div>
+        <div className="p-6 space-y-4">
+           {details.roles.map((role, i) => (
+              <div key={i} className="bg-black border border-white/5 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-white/20 transition-all cursor-pointer group">
+                 <div>
+                    <div className="text-xs uppercase tracking-widest text-[#4f46e5] font-bold mb-1">{role.status}</div>
+                    <div className="font-bold text-lg text-white group-hover:text-eterna-rose transition-colors">{role.type}</div>
+                    <div className="text-sm text-white/50">{role.project}</div>
+                 </div>
+                 <div className="flex flex-row sm:flex-col justify-between sm:items-end w-full sm:w-auto">
+                    <span className="font-mono text-green-400 font-bold">{role.rate}</span>
+                    <button className="mt-0 sm:mt-2 bg-white/10 hover:bg-white text-white hover:text-black px-4 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-widest">Apply Now</button>
+                 </div>
+              </div>
+           ))}
+           {details.roles.length === 0 && (
+             <div className="text-center text-white/50 py-10">No open roles found for this category.</div>
+           )}
+        </div>
       </div>
     </div>
   );

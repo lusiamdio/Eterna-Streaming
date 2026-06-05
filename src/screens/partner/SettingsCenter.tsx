@@ -6,6 +6,19 @@ import {
   CheckCircle2, AlertCircle, Save, Upload, Activity, Download
 } from 'lucide-react';
 
+import {
+  OrgVerificationModal,
+  OrgSaveWorkflow,
+  TeamInviteModal,
+  TreasuryWalletModal,
+  RevenueDistributionModal,
+  SecurityResponseModal,
+  IntegrationAuthModal,
+  BrandIdentityModal,
+  ThemeStudioModal,
+  DataExportModal
+} from './SettingsModals';
+
 export function SettingsCenter() {
   const [activeTab, setActiveTab] = useState('org');
 
@@ -21,8 +34,6 @@ export function SettingsCenter() {
     { id: 'communication', label: 'Communication Center', icon: <MessageSquare className="w-4 h-4" /> },
     { id: 'brand', label: 'Brand & White Label', icon: <Palette className="w-4 h-4" /> },
     { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
-    { id: 'data', label: 'Data & Analytics', icon: <BarChart className="w-4 h-4" /> },
-    { id: 'api', label: 'API & Developer Hub', icon: <Code className="w-4 h-4" /> },
     { id: 'billing', label: 'Billing & Subscription', icon: <CreditCard className="w-4 h-4" /> },
     { id: 'audit', label: 'Audit & Activity Logs', icon: <FileText className="w-4 h-4" /> },
     { id: 'system', label: 'System Preferences', icon: <SettingsIcon className="w-4 h-4" /> },
@@ -68,12 +79,10 @@ export function SettingsCenter() {
            {activeTab === 'integrations' && <IntegrationsSettings />}
            {activeTab === 'brand' && <BrandSettings />}
            {activeTab === 'audit' && <AuditLogsSettings />}
-           {activeTab === 'communication' && <div className="p-8 text-white/50">Communication settings coming soon...</div>}
-           {activeTab === 'notifications' && <div className="p-8 text-white/50">Smart Notification Engine coming soon...</div>}
-           {activeTab === 'data' && <div className="p-8 text-white/50">Reporting Preferences coming soon...</div>}
-           {activeTab === 'api' && <div className="p-8 text-white/50">Developer Sandbox coming soon...</div>}
-           {activeTab === 'billing' && <div className="p-8 text-white/50">Subscription plans coming soon...</div>}
-           {activeTab === 'system' && <div className="p-8 text-white/50">System Preferences coming soon...</div>}
+           {activeTab === 'communication' && <CommunicationSettings />}
+           {activeTab === 'notifications' && <NotificationSettings />}
+           {activeTab === 'billing' && <BillingSettings />}
+           {activeTab === 'system' && <SystemPreferencesSettings />}
         </div>
       </div>
     </div>
@@ -81,8 +90,10 @@ export function SettingsCenter() {
 }
 
 function OrgSettings() {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+  
   return (
-    <div className="p-8 space-y-8 animate-in fade-in">
+    <div className="p-8 space-y-8 animate-in fade-in relative">
       <div>
         <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><Building className="text-eterna-rose" /> Organization Profile</h2>
         <p className="text-white/50 text-sm max-w-2xl">Manage your company identity, legal entity status, and official verification.</p>
@@ -128,27 +139,32 @@ function OrgSettings() {
         </div>
 
         <div className="pt-6 border-t border-white/5 flex gap-4 mt-8">
-          <button className="bg-eterna-rose hover:bg-eterna-rose/90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-all hover:scale-[1.02]">
+          <button onClick={() => setActiveModal('save')} className="bg-eterna-rose hover:bg-eterna-rose/90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-all hover:scale-[1.02]">
             <Save className="w-4 h-4"/> Save Changes
           </button>
-          <button className="bg-white/5 hover:bg-white/10 text-green-400 px-6 py-3 rounded-xl font-bold border border-green-400/20 flex items-center gap-2 transition-colors pointer-events-none">
-            <CheckCircle2 className="w-4 h-4"/> Verified Entity
+          <button onClick={() => setActiveModal('verify')} className="bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-xl font-bold border border-white/10 flex items-center gap-2 transition-colors">
+            <CheckCircle2 className="w-4 h-4 text-green-400"/> Verify Organization
           </button>
         </div>
       </div>
+      
+      {activeModal === 'save' && <OrgSaveWorkflow onClose={() => setActiveModal(null)} />}
+      {activeModal === 'verify' && <OrgVerificationModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
 
 function TeamSettings() {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
   return (
-    <div className="p-8 space-y-8 animate-in fade-in">
+    <div className="p-8 space-y-8 animate-in fade-in relative">
       <div className="flex justify-between items-center sm:items-start flex-col sm:flex-row gap-4">
         <div>
           <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><Users className="text-blue-400" /> Team & Access Control</h2>
           <p className="text-white/50 text-sm max-w-xl">Invite and manage team members with a dynamic permissions matrix.</p>
         </div>
-        <button className="bg-white text-black px-5 py-2.5 rounded-xl font-bold hover:bg-gray-200 shadow-lg shrink-0 w-full sm:w-auto transition-colors">Invite User</button>
+        <button onClick={() => setActiveModal('invite')} className="bg-white text-black px-5 py-2.5 rounded-xl font-bold hover:bg-gray-200 shadow-lg shrink-0 w-full sm:w-auto transition-colors">Invite User</button>
       </div>
 
       <div className="bg-[#111] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
@@ -194,13 +210,17 @@ function TeamSettings() {
           </table>
         </div>
       </div>
+      
+      {activeModal === 'invite' && <TeamInviteModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
 
 function TreasurySettings() {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
   return (
-    <div className="p-8 space-y-8 animate-in fade-in">
+    <div className="p-8 space-y-8 animate-in fade-in relative">
       <div>
         <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><DollarSign className="text-green-400" /> Revenue & Treasury</h2>
         <p className="text-white/50 text-sm max-w-2xl">Configure payment methods, automated revenue distribution rules, and tax settings.</p>
@@ -218,7 +238,7 @@ function TreasurySettings() {
               <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-[10px] px-2.5 py-1 rounded font-bold uppercase tracking-widest">Default</span>
             </div>
             
-            <button className="border border-dashed border-white/20 hover:border-white/50 hover:bg-white/5 rounded-2xl flex flex-col items-center justify-center text-white/50 hover:text-white transition-all p-5 h-[140px] gap-2">
+            <button onClick={() => setActiveModal('wallet')} className="border border-dashed border-white/20 hover:border-white/50 hover:bg-white/5 rounded-2xl flex flex-col items-center justify-center text-white/50 hover:text-white transition-all p-5 h-[140px] gap-2">
               <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-1"><DollarSign className="w-5 h-5"/></div>
               <span className="font-bold text-sm">Add Payment Method</span>
             </button>
@@ -244,11 +264,14 @@ function TreasurySettings() {
               </div>
             </div>
             <div className="mt-8 pt-6 border-t border-white/5 flex justify-end">
-               <button className="text-white/50 hover:text-white font-bold text-xs uppercase tracking-widest flex items-center gap-2 bg-white/5 px-4 py-2 rounded-lg transition-colors">Edit Allocation Profile</button>
+               <button onClick={() => setActiveModal('allocation')} className="text-white/50 hover:text-white font-bold text-xs uppercase tracking-widest flex items-center gap-2 bg-white/5 px-4 py-2 rounded-lg transition-colors">Edit Allocation Profile</button>
             </div>
           </div>
         </div>
       </div>
+      
+      {activeModal === 'wallet' && <TreasuryWalletModal onClose={() => setActiveModal(null)} />}
+      {activeModal === 'allocation' && <RevenueDistributionModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
@@ -352,8 +375,10 @@ function LicensingSettings() {
 }
 
 function SecuritySettings() {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
   return (
-    <div className="p-8 space-y-8 animate-in fade-in">
+    <div className="p-8 space-y-8 animate-in fade-in relative">
       <div>
         <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><Shield className="text-red-400" /> Security & Compliance</h2>
         <p className="text-white/50 text-sm max-w-2xl">Manage multi-factor authentication, active sessions, zero-trust policies, and compliance logging.</p>
@@ -390,11 +415,13 @@ function SecuritySettings() {
               </div>
               <div className="flex items-center w-full md:w-auto justify-between md:justify-end gap-4 ml-16 md:ml-0">
                  <span className="text-white/30 text-xs font-medium">Active 3 days ago</span>
-                 <button className="text-red-400 text-xs font-bold uppercase tracking-widest hover:bg-red-400/10 border border-red-400/20 px-4 py-2 rounded-lg transition-colors">Revoke Access</button>
+                 <button onClick={() => setActiveModal('revoke')} className="text-red-400 text-xs font-bold uppercase tracking-widest hover:bg-red-400/10 border border-red-400/20 px-4 py-2 rounded-lg transition-colors">Revoke Access</button>
               </div>
            </div>
         </div>
       </div>
+      
+      {activeModal === 'revoke' && <SecurityResponseModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
@@ -431,8 +458,10 @@ function AISettings() {
 }
 
 function IntegrationsSettings() {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
   return (
-    <div className="p-8 space-y-8 animate-in fade-in">
+    <div className="p-8 space-y-8 animate-in fade-in relative">
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><Unplug className="text-orange-400" /> Cloud Integrations</h2>
@@ -442,10 +471,10 @@ function IntegrationsSettings() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
          {[
-            { name: 'Google Workspace', status: 'Connected', desc: 'Sync Drive assets and Calendar events automagically.', btn: 'Manage Auth', active: true, icon: 'https://upload.wikimedia.org/wikipedia/commons/d/da/Google_Drive_logo.png' },
-            { name: 'Dropbox Enterprise', status: 'Not Connected', desc: 'Two-way sync for massive raw ProRes assets.', btn: 'Connect via OAuth', active: false, icon: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Dropbox_logo_2017.svg', filter: 'brightness-0 invert' },
-            { name: 'YouTube MCN Sync', status: 'Not Connected', desc: 'Push published content directly to YT channels.', btn: 'Connect Channel', active: false, icon: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg' },
-            { name: 'Slack Workspaces', status: 'Connected', desc: 'Route system notifications to specific Slack channels.', btn: 'Configure Channels', active: true, icon: 'https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg' }
+            { id: 'google', name: 'Google Workspace', status: 'Connected', desc: 'Sync Drive assets and Calendar events automagically.', btn: 'Manage Auth', active: true, icon: 'https://upload.wikimedia.org/wikipedia/commons/d/da/Google_Drive_logo.png' },
+            { id: 'dropbox', name: 'Dropbox Enterprise', status: 'Not Connected', desc: 'Two-way sync for massive raw ProRes assets.', btn: 'Connect via OAuth', active: false, icon: 'https://upload.wikimedia.org/wikipedia/commons/c/cb/Dropbox_logo_2017.svg', filter: 'brightness-0 invert' },
+            { id: 'youtube', name: 'YouTube MCN Sync', status: 'Not Connected', desc: 'Push published content directly to YT channels.', btn: 'Connect Channel', active: false, icon: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg' },
+            { id: 'slack', name: 'Slack Workspaces', status: 'Connected', desc: 'Route system notifications to specific Slack channels.', btn: 'Configure Channels', active: true, icon: 'https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg' }
          ].map((int, i) => (
            <div key={i} className={`border ${int.active ? 'border-orange-500/30 bg-orange-500/5' : 'border-white/5 bg-[#111]'} p-6 rounded-2xl flex flex-col justify-between hover:border-orange-400/50 transition-all shadow-lg group min-h-[160px]`}>
               <div className="flex items-start justify-between mb-4">
@@ -455,18 +484,22 @@ function IntegrationsSettings() {
               <div>
                  <div className="font-bold text-lg mb-1">{int.name}</div>
                  <div className="text-sm text-white/50 mb-6">{int.desc}</div>
-                 <button className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${int.active ? 'bg-black text-white border border-white/10 hover:bg-white/10' : 'bg-white text-black hover:bg-gray-200'}`}>{int.btn}</button>
+                 <button onClick={() => setActiveModal(int.id)} className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg ${int.active ? 'bg-black text-white border border-white/10 hover:bg-white/10' : 'bg-white text-black hover:bg-gray-200'}`}>{int.btn}</button>
               </div>
            </div>
          ))}
       </div>
+      
+      {activeModal && <IntegrationAuthModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
 
 function BrandSettings() {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
   return (
-    <div className="p-8 space-y-8 animate-in fade-in">
+    <div className="p-8 space-y-8 animate-in fade-in relative">
       <div>
         <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><Palette className="text-pink-400" /> Brand & White Label Identity</h2>
         <p className="text-white/50 text-sm max-w-2xl">Customize your organization's visual footprint across the Eterna ecosystem, player surfaces, and custom domains.</p>
@@ -474,7 +507,7 @@ function BrandSettings() {
       
       <div className="space-y-8 max-w-4xl bg-[#111] border border-white/5 rounded-2xl p-8 shadow-2xl">
          <div className="flex flex-col md:flex-row gap-8 items-start">
-            <div className="w-32 h-32 bg-black border border-white/10 rounded-3xl flex items-center justify-center shrink-0 relative group cursor-pointer overflow-hidden shadow-inner flex-col">
+            <div onClick={() => setActiveModal('logo')} className="w-32 h-32 bg-black border border-white/10 rounded-3xl flex items-center justify-center shrink-0 relative group cursor-pointer overflow-hidden shadow-inner flex-col">
                <img src="https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=300&auto=format&fit=crop" className="w-full h-full object-cover" />
                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-md">
                  <Upload className="w-6 h-6 text-white mb-2" />
@@ -484,7 +517,7 @@ function BrandSettings() {
             <div className="flex-1 mt-2">
                <h3 className="font-bold text-xl mb-2">Organization Logo</h3>
                <p className="text-sm text-white/50 mb-6 leading-relaxed">Upload a high-res logo (PNG or SVG, min 512x512px). This asset is centrally piped to your partner profile, OTT streaming player corner watermark, and B2B screening room headers.</p>
-               <button className="bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"><Upload className="w-4 h-4"/> Browse Files...</button>
+               <button onClick={() => setActiveModal('logo')} className="bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"><Upload className="w-4 h-4"/> Browse Files...</button>
             </div>
          </div>
          
@@ -506,27 +539,35 @@ function BrandSettings() {
          </div>
          
          <div className="pt-8 border-t border-white/10">
-           <label className="block text-xs font-bold uppercase tracking-widest text-white/50 mb-4">Player Theme (Dark/Light Modes)</label>
+           <div className="flex justify-between items-center mb-4">
+             <label className="block text-xs font-bold uppercase tracking-widest text-white/50">Player Theme (Dark/Light Modes)</label>
+             <button onClick={() => setActiveModal('theme')} className="text-xs font-bold text-pink-400 hover:text-pink-300">Change Theme</button>
+           </div>
            <div className="flex gap-4">
-             <div className="w-1/3 h-24 rounded-xl border-2 border-pink-500 bg-black relative overflow-hidden p-3 cursor-pointer shadow-[0_0_15px_rgba(236,72,153,0.3)]">
+             <div onClick={() => setActiveModal('theme')} className="w-1/3 h-24 rounded-xl border-2 border-pink-500 bg-black relative overflow-hidden p-3 cursor-pointer shadow-[0_0_15px_rgba(236,72,153,0.3)]">
                <div className="w-full h-10 bg-white/10 rounded mt-auto"></div>
                <div className="absolute top-3 right-3 w-4 h-4 rounded-full bg-pink-500 flex items-center justify-center"><CheckCircle2 className="w-3 h-3 text-black"/></div>
                <span className="absolute top-3 left-3 text-xs font-bold">Midnight</span>
              </div>
-             <div className="w-1/3 h-24 rounded-xl border border-white/10 bg-white relative overflow-hidden p-3 cursor-pointer opacity-50 hover:opacity-100 transition-opacity">
+             <div onClick={() => setActiveModal('theme')} className="w-1/3 h-24 rounded-xl border border-white/10 bg-white relative overflow-hidden p-3 cursor-pointer opacity-50 hover:opacity-100 transition-opacity">
                <div className="w-full h-10 bg-black/10 rounded mt-auto"></div>
                <span className="absolute top-3 left-3 text-xs font-bold text-black">Light Studio</span>
              </div>
            </div>
          </div>
       </div>
+      
+      {activeModal === 'logo' && <BrandIdentityModal onClose={() => setActiveModal(null)} />}
+      {activeModal === 'theme' && <ThemeStudioModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
 
 function AuditLogsSettings() {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
   return (
-    <div className="p-8 space-y-6 animate-in fade-in h-full flex flex-col">
+    <div className="p-8 space-y-6 animate-in fade-in h-full flex flex-col relative">
       <div className="shrink-0">
         <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><FileText className="text-gray-400" /> Immutable Audit & Activity Logs</h2>
         <p className="text-white/50 text-sm max-w-2xl">A cryptographically verifiable record of all structural platform actions for compliance and legal security.</p>
@@ -539,7 +580,7 @@ function AuditLogsSettings() {
            <option>Treasury & Payouts</option>
            <option>Content Publication</option>
          </select>
-         <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold flex items-center gap-2 transition-colors ml-auto"><Download className="w-4 h-4"/> Export CSV</button>
+         <button onClick={() => setActiveModal('export')} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold flex items-center gap-2 transition-colors ml-auto"><Download className="w-4 h-4"/> Data Export</button>
       </div>
       
       <div className="bg-[#111] border border-white/5 rounded-2xl overflow-hidden flex-1 flex flex-col min-h-0 shadow-2xl">
@@ -575,6 +616,94 @@ function AuditLogsSettings() {
                ))}
             </div>
          </div>
+      </div>
+      
+      {activeModal === 'export' && <DataExportModal onClose={() => setActiveModal(null)} />}
+    </div>
+  );
+}
+
+function CommunicationSettings() {
+  return (
+    <div className="p-8 space-y-8 animate-in fade-in">
+      <div>
+        <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><MessageSquare className="text-blue-400" /> Communication Center</h2>
+        <p className="text-white/50 text-sm max-w-2xl">Internal messaging, team chat, project rooms, secure file exchange, and video conferencing hub.</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {['Team Chat', 'Project Rooms', 'Secure File Exchange', 'Video Conferencing', 'Voice Calls', 'Calendar Scheduling', 'Meeting Notes AI', 'Contract Sharing', 'Digital Signatures', 'Announcement Center', 'Broadcast Messaging', 'Partner Directory', 'Contact Management CRM', 'Help Desk Ticketing', 'Customer Support Inbox'].map((item, i) => (
+           <div key={i} className="bg-[#111] border border-white/5 p-4 rounded-xl hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-3">
+             <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center"><MessageSquare className="w-4 h-4 text-blue-400"/></div>
+             <span className="font-bold text-sm tracking-wide">{item}</span>
+           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NotificationSettings() {
+  return (
+    <div className="p-8 space-y-8 animate-in fade-in">
+      <div>
+        <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><Bell className="text-yellow-400" /> Notification Command Center</h2>
+        <p className="text-white/50 text-sm max-w-2xl">Configure global alerts, routing rules, and automated workflow messaging.</p>
+      </div>
+      <div className="space-y-6">
+        <div className="bg-[#111] border border-white/5 p-6 rounded-2xl">
+           <h3 className="font-bold mb-4">Notification Channels</h3>
+           <div className="flex gap-4 mb-4">
+             {['Email', 'SMS', 'Push Notifications', 'In-App'].map((c, i) => (
+                <label key={i} className="flex items-center gap-2 text-sm text-white/80"><input type="checkbox" defaultChecked className="accent-yellow-500" /> {c}</label>
+             ))}
+           </div>
+        </div>
+        <div className="bg-[#111] border border-white/5 p-6 rounded-2xl">
+           <h3 className="font-bold mb-4">Workflow Automation Builder</h3>
+           <div className="bg-black border border-white/10 p-4 rounded-xl font-mono text-sm">
+              <span className="text-blue-400">if</span> (Revenue &gt; $10,000) {'{\n'}
+              <span className="text-yellow-400">  trigger</span>(Email, SMS, SlackAlert);{'\n}'}
+           </div>
+           <button className="mt-4 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest">+ Add Rule</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BillingSettings() {
+  return (
+    <div className="p-8 space-y-8 animate-in fade-in">
+      <div>
+        <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><CreditCard className="text-green-400" /> Subscription & Enterprise Contracts</h2>
+        <p className="text-white/50 text-sm max-w-2xl">Manage your OS operating tier, seat capacity, invoices, and cloud usage quotas.</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {['Subscription Management', 'Usage Tracking', 'Invoice Center', 'Payment History', 'Auto Renewal Controls', 'Enterprise Contracts', 'Upgrade Center', 'Downgrade Requests', 'Add-On Marketplace', 'Coupon Management', 'Promotional Campaigns'].map((item, i) => (
+           <div key={i} className="bg-[#111] border border-white/5 p-4 rounded-xl flex items-center gap-3">
+             <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center"><CreditCard className="w-4 h-4 text-green-400"/></div>
+             <span className="font-bold text-sm tracking-wide">{item}</span>
+           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SystemPreferencesSettings() {
+  return (
+    <div className="p-8 space-y-8 animate-in fade-in">
+      <div>
+        <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><SettingsIcon className="text-gray-400" /> System Preferences</h2>
+        <p className="text-white/50 text-sm max-w-2xl">Layouts, accessibility, operating modes, and global localization.</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {['Language Management', 'Timezone Management', 'Regional Settings', 'Accessibility Center', 'Appearance Settings', 'Workspace Layout Builder', 'Dashboard Widget Manager', 'Keyboard Shortcuts', 'Productivity Mode', 'Focus Mode', 'Creator Mode', 'Executive Mode', 'Ministry Mode', 'Broadcaster Mode', 'Distributor Mode'].map((item, i) => (
+           <div key={i} className="bg-[#111] border border-white/5 p-4 rounded-xl flex items-center gap-3 text-white/50 hover:text-white transition-colors cursor-pointer">
+             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center"><SettingsIcon className="w-4 h-4"/></div>
+             <span className="font-bold text-sm tracking-wide">{item}</span>
+           </div>
+        ))}
       </div>
     </div>
   );
