@@ -8,7 +8,7 @@ import { CATALOG } from "../lib/data";
 import { Content } from "../types";
 
 export function HomeScreen() {
-  const { go, setContent, watchlist } = useAppStore();
+  const { go, setContent, watchlist, toggleWatchlist } = useAppStore();
   const heroC = CATALOG[0];
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -86,10 +86,10 @@ export function HomeScreen() {
             <button className="bg-white text-black hover:bg-white/90 px-8 py-3.5 rounded-full flex items-center gap-3 font-bold shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:scale-105 transition-all text-lg" onClick={doPlayHero}>
               <Play className="w-5 h-5 fill-current" /> Watch Now
             </button>
-            <button className="ui-button px-8 py-3.5 rounded-full font-bold flex items-center gap-2 text-lg hover:bg-white/10" onClick={doDetailHero}>
+            <button className="ui-button px-8 py-3.5 rounded-full font-bold flex items-center gap-2 text-lg hover:bg-white/10" onClick={() => toggleWatchlist(heroC.id)}>
               <Plus className="w-5 h-5" /> Add to Watchlist
             </button>
-            <button className="px-6 py-3 font-semibold text-white/50 hover:text-white transition-colors">
+            <button className="px-6 py-3 font-semibold text-white/50 hover:text-white transition-colors border border-white/0 hover:border-white/10 rounded-full" onClick={() => go('director')}>
               Meet the Director
             </button>
           </div>
@@ -97,6 +97,9 @@ export function HomeScreen() {
       </div>
 
       <div className="relative z-20 pb-12 space-y-4">
+        {watchlist.length > 0 && (
+          <Section title="My List" data={CATALOG.filter(c => watchlist.includes(c.id))} />
+        )}
         <Section title="Trending Now" data={CATALOG.slice(0, 8)} />
         <Section title="Popular on Eterna" data={CATALOG.slice(4, 9)} />
         <Section title="Continue Watching" data={CATALOG.slice(2, 6)} wide />
@@ -126,6 +129,8 @@ export function HomeScreen() {
           <ArrowUp className="w-6 h-6 text-white" />
         </button>
       )}
+
+      <BottomNav />
     </div>
   );
 }

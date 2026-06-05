@@ -1,3 +1,4 @@
+import React from 'react';
 import { Play, Sparkles, Users, Info, Plus } from "lucide-react";
 import { Content } from "../types";
 import { useAppStore } from "../lib/store";
@@ -72,8 +73,12 @@ export function ContentCard({ content, wide }: ContentCardProps) {
              </div>
         </div>
         <div className="w-full h-full flex items-center justify-center text-[60px] transition-transform duration-500 group-hover:scale-110 group-hover:brightness-50 mt-[-20px] bg-[#1a1a2e]">
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=600&auto=format&fit=crop')] bg-cover bg-center opacity-30 group-hover:opacity-60 transition-opacity duration-500 mix-blend-overlay"></div>
-          <span className="relative z-10 drop-shadow-2xl">{content.emoji}</span>
+          {content.coverUrl ? (
+            <img src={content.coverUrl} alt={content.title} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500" />
+          ) : (
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=600&auto=format&fit=crop')] bg-cover bg-center opacity-30 group-hover:opacity-60 transition-opacity duration-500 mix-blend-overlay"></div>
+          )}
+          {!content.coverUrl && <span className="relative z-10 drop-shadow-2xl">{content.emoji}</span>}
         </div>
         {tvBadge()}
       </div>
@@ -108,8 +113,12 @@ export function ContentCard({ content, wide }: ContentCardProps) {
       </div>
       
       <div className="w-full h-full flex items-center justify-center text-[70px] transition-transform duration-700 group-hover:scale-125 group-hover:-translate-y-4 group-hover:brightness-50 mt-[-20px] bg-gradient-to-br from-[#1a1a2e] to-[#0a0a0a]">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=400&auto=format&fit=crop')] bg-cover bg-center opacity-20 filter grayscale group-hover:grayscale-0 transition-all duration-700 mix-blend-overlay"></div>
-        <span className="relative z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">{content.emoji}</span>
+        {content.coverUrl ? (
+          <img src={content.coverUrl} alt={content.title} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500" />
+        ) : (
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=400&auto=format&fit=crop')] bg-cover bg-center opacity-20 filter grayscale group-hover:grayscale-0 transition-all duration-700 mix-blend-overlay"></div>
+        )}
+        {!content.coverUrl && <span className="relative z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">{content.emoji}</span>}
       </div>
       {tvBadge()}
     </div>

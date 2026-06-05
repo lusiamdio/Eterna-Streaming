@@ -1,237 +1,265 @@
-import { useState, useMemo, useEffect } from "react";
-import { Search, Mic, Sparkles, Send } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Sparkles, Brain, Clock, Target, Compass, Send } from "lucide-react";
 import { useAppStore } from "../lib/store";
 import { TopNav, BottomNav } from "../components/Navigation";
 import { CATALOG } from "../lib/data";
+import { ContentCard } from "../components/Cards";
 
-const GENRES = ['All', 'Action', 'Drama', 'Sci-Fi', 'Comedy', 'Horror', 'Thriller', 'Romance', 'Anime', 'Docs', 'Kids', 'Sports'];
+const MOODS = ['Inspired', 'Curious', 'Adventurous', 'Spiritual', 'Romantic', 'Motivated', 'Family Time', 'Educational', 'Thrilled', 'Relaxed'];
+const GOALS = ['Leadership', 'Entrepreneurship', 'Marriage', 'Parenting', 'Faith', 'Personal Growth', 'Wealth Creation', 'Mental Wellness', 'Innovation', 'AI & Technology'];
+const TIMES = ['15 min', '30 min', '60 min', '90 min', '2 Hours', 'Weekend Marathon'];
 
-export function SearchScreen() {
-  const { searchQ, currentGenre, setSearch, setContent, go, showToast } = useAppStore();
-  const [val, setVal] = useState(searchQ);
-  const [aiMode, setAiMode] = useState(false);
+export function DiscoveryHub({ title = "Intent-Based Discovery", isOriginals = false, isSeries = false, forceGenre }: { title?: string, isOriginals?: boolean, isSeries?: boolean, forceGenre?: string }) {
+  const { setContent, go } = useAppStore();
+  const [prompt, setPrompt] = useState("");
+  const [activeMood, setActiveMood] = useState("");
+  const [activeGoal, setActiveGoal] = useState("");
+  const [activeTime, setActiveTime] = useState("");
   const [aiTyping, setAiTyping] = useState(false);
   const [aiResponse, setAiResponse] = useState("");
-  const [moodSearch, setMoodSearch] = useState("");
 
   const filtered = useMemo(() => {
-    let res = CATALOG;
+    let res = [...CATALOG, ...CATALOG.slice(0, 5).map(c => ({...c, id: c.id + 100})), ...CATALOG.map(c => ({...c, id: c.id + 200}))]; // Expand catalog slightly to over 20 items
     
-    // AI Mood Search Filtering Logic
-    if (aiMode && aiResponse !== "") {
-      const q = moodSearch.toLowerCase();
-      if (q.includes("inspire") || q.includes("motivate") || q.includes("uplift") || q.includes("spirit")) {
-        res = res.filter(c => c.genres.includes("Docs") || c.genres.includes("Drama"));
-      } else if (q.includes("family") || q.includes("kid") || q.includes("fun")) {
-        res = res.filter(c => c.genres.includes("Comedy") || c.genres.includes("Kids"));
-      } else if (q.includes("business") || q.includes("lead")) {
-        res = res.filter(c => c.genres.includes("Docs"));
-      }
-    } else {
-      if (currentGenre && currentGenre !== 'All') {
-        res = res.filter(c => c.genres.includes(currentGenre));
-      }
-      if (val) {
-        const q = val.toLowerCase();
-        res = res.filter(c => c.title.toLowerCase().includes(q) || c.sub.toLowerCase().includes(q));
-      }
+    if (forceGenre) {
+       res = res.filter(c => c.genres && c.genres.includes(forceGenre));
+       // If empty due to mock data, just fake it by renaming genres of some items or creating dynamic items
+       if (res.length === 0) {
+         res = CATALOG.slice(0, 4).map((c, i) => ({ ...c, id: c.id + 1000 + i, title: `${forceGenre}: ${c.title}`, genres: [forceGenre] }));
+       }
     }
-    return res;
-  }, [val, currentGenre, aiMode, aiResponse, moodSearch]);
 
-  const label = aiMode 
-    ? (aiTyping ? "AI Concierge is thinking..." : aiResponse ? aiResponse : "Describe your mood...")
-    : val ? `Results for "${val}"` : currentGenre !== 'All' ? `${currentGenre} Titles` : 'All Titles';
-
-  const doVoiceSearch = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      showToast("Voice search is not supported in this browser.");
-      return;
+    if (isOriginals) {
+       res = res.map((c, i) => ({...c, id: c.id + 500, title: `Eterna Original: ${c.title}`}));
     }
     
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => {
-      showToast('🎙 Listening...');
-    };
-
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      if (aiMode) {
-        setMoodSearch(transcript);
-        handleAiSearch(transcript);
+    if (isSeries) {
+       res = res.map((c, i) => ({...c, id: c.id + 1000, title: `${c.title} Series`, eps: 13, sub: '5 Seasons • 65 Episodes'}));
+    }
+    
+    // Simulate AI Filtering
+    if (activeMood) {
+      if (['Inspired', 'Motivated', 'Spiritual'].includes(activeMood)) {
+        res = res.filter(c => c.genres?.includes("Drama") || c.genres?.includes("Docs") || c.rating >= '9.0');
+      } else if (['Thrilled', 'Adventurous'].includes(activeMood)) {
+        res = res.filter(c => c.genres?.includes("Action") || c.genres?.includes("Thriller") || c.genres?.includes("Sci-Fi"));
+      } else if (['Family Time', 'Relaxed', 'Romantic'].includes(activeMood)) {
+        res = res.filter(c => c.genres?.includes("Comedy") || c.genres?.includes("Kids") || c.genres?.includes("Fantasy"));
+      }
+    }
+    
+    if (activeGoal) {
+      res = res.filter(c => c.rating && parseFloat(c.rating) > 8.5); // Just a mock filter
+    }
+    
+    if (activeTime) {
+      if (activeTime === '15 min' || activeTime === '30 min') {
+         res = res.filter(c => c.eps); // Series maybe?
       } else {
-        setVal(transcript);
-        setSearch(transcript, currentGenre);
-        showToast(`Searching for "${transcript}"`);
+         res = res.filter(c => !c.eps); // Movies
       }
-    };
+    }
 
-    recognition.onerror = (event: any) => {
-      showToast(`Voice search error: ${event.error}`);
-    };
+    if (aiResponse) {
+       res = res.sort(() => 0.5 - Math.random()).slice(0, 6); // Randomize for AI response
+    }
 
-    recognition.start();
-  };
+    return res.length > 0 ? res : CATALOG.slice(0, 6); // Fallback
+  }, [activeMood, activeGoal, activeTime, aiResponse, isOriginals, isSeries]);
 
-  const handleAiSearch = (q: string = moodSearch) => {
-    if (!q) return;
+  const handleAiSearch = () => {
+    if (!prompt) return;
     setAiTyping(true);
     setAiResponse("");
+    setActiveMood("");
+    setActiveGoal("");
+    setActiveTime("");
     setTimeout(() => {
       setAiTyping(false);
-      setAiResponse(`Based on your mood, I found these ${q.includes('inspire') ? 'uplifting' : q.includes('family') ? 'fun' : 'perfect'} titles for you:`);
-    }, 1500);
+      setAiResponse(`Based on your request:
+• Runtime matching your preference
+• Themes aligned with "${prompt}"
+• Cinematic tone
+
+Recommended carefully curated selections for you.`);
+    }, 1200);
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-eterna-bg pb-[50px]">
+    <div className="flex flex-col min-h-screen bg-eterna-bg pb-[80px]">
       <TopNav showBack title="Eterna" />
       
-      <div className="px-[20px] pt-4 flex-1 overflow-y-auto">
-        <div className="flex justify-between items-end mb-2">
-          <h1 className="text-[24px] font-bold text-white tracking-tight">{aiMode ? 'AI Concierge' : 'Search'}</h1>
-          <button 
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors ${aiMode ? 'bg-[#46d369]/20 text-[#46d369] border border-[#46d369]/40' : 'bg-[#222] text-white/70 border border-white/10 hover:text-white'}`}
-            onClick={() => {
-              setAiMode(!aiMode);
-              setAiResponse("");
-              setAiTyping(false);
-            }}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Smart Mood Search
-          </button>
+      <div className="px-6 pt-10 flex-1 overflow-y-auto hide-scrollbar max-w-6xl mx-auto w-full">
+        <div className="flex flex-col items-center justify-center text-center mt-10 mb-12">
+          <Sparkles className="w-12 h-12 text-eterna-rose mb-4 drop-shadow-[0_0_15px_rgba(225,29,72,0.8)]" />
+          <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-grad tracking-tight mb-2">{title}</h1>
+          <p className="text-white/50 font-mono text-sm uppercase tracking-widest">Find the perfect film in less than 30 seconds</p>
         </div>
 
-        {/* Search Bar */}
-        {aiMode ? (
-          <div className="flex items-center gap-[9px] bg-gradient-to-r from-[#031d10] to-[#011409] border-[1.5px] border-[#46d369]/60 rounded-[9px] p-[10px_14px] mb-[16px] shadow-[0_0_15px_rgba(70,211,105,0.1)]">
-            <Sparkles className="w-[18px] h-[18px] text-[#46d369] shrink-0 animate-pulse" />
+        {/* AI Discovery Hub Hero */}
+        <div className="w-full max-w-3xl mx-auto mb-16">
+          <div className="text-[13px] font-bold text-white/50 mb-3 uppercase tracking-wider pl-4">What would you like to experience today?</div>
+          <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full p-2 pl-6 shadow-2xl focus-within:border-eterna-rose/50 focus-within:shadow-[0_0_30px_rgba(225,29,72,0.2)] transition-all">
             <input 
               type="text" 
-              value={moodSearch}
-              onChange={(e) => setMoodSearch(e.target.value)}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAiSearch()}
-              placeholder="E.g., 'I want something inspiring for family night'" 
-              className="flex-1 bg-transparent border-none text-[#e0ffe8] text-[15px] font-sans outline-none placeholder:text-[#46d369]/50"
+              placeholder="e.g., Show me an inspiring documentary under 90 minutes" 
+              className="flex-1 bg-transparent border-none text-white text-lg font-sans outline-none placeholder:text-white/30"
             />
-            {moodSearch && (
-              <button className="flex items-center justify-center p-[6px] rounded-full bg-[#46d369]/20 text-[#46d369] hover:bg-[#46d369]/30 transition-colors" onClick={() => handleAiSearch()}>
-                <Send className="w-[14px] h-[14px]" />
-              </button>
-            )}
-            <button className="flex items-center justify-center p-[4px] rounded-[4px] text-eterna-muted hover:text-[#46d369] transition-colors" onClick={doVoiceSearch}>
-              <Mic className="w-[18px] h-[18px]" />
+            <button className="flex items-center justify-center bg-white text-black px-6 py-3 rounded-full font-bold hover:bg-gray-200 transition-colors uppercase tracking-wider text-sm shadow-[0_0_20px_rgba(255,255,255,0.3)]" onClick={handleAiSearch}>
+              <Send className="w-4 h-4 mr-2" /> Concierge
             </button>
           </div>
-        ) : (
-          <div className="relative z-50">
-            <div className="flex items-center gap-[9px] bg-[#222] border-[1.5px] border-white/10 rounded-[9px] p-[9px_14px] mb-[16px] focus-within:border-white/30 transition-colors relative z-20">
-              <Search className="w-[18px] h-[18px] text-white/50 shrink-0" />
-              <input 
-                type="text" 
-                value={val}
-                onChange={(e) => {
-                  setVal(e.target.value);
-                  setSearch(e.target.value, currentGenre);
-                }}
-                placeholder="Search titles, genres, actors..." 
-                className="flex-1 bg-transparent border-none text-white text-[15px] font-sans outline-none placeholder:text-white/40"
-              />
-              <button className="flex items-center justify-center p-[4px] rounded-[4px] text-white/50 hover:text-white hover:bg-white/5" onClick={doVoiceSearch}>
-                <Mic className="w-[18px] h-[18px]" />
-              </button>
+          <div className="flex gap-3 mt-4 text-[11px] font-mono text-white/40 justify-center flex-wrap">
+            <span className="cursor-pointer hover:text-white transition-colors" onClick={() => setPrompt('Inspire me')}>Inspire me</span> •
+            <span className="cursor-pointer hover:text-white transition-colors" onClick={() => setPrompt('Make me laugh')}>Make me laugh</span> •
+            <span className="cursor-pointer hover:text-white transition-colors" onClick={() => setPrompt('Teach me something new')}>Teach me something new</span> •
+            <span className="cursor-pointer hover:text-white transition-colors" onClick={() => setPrompt('Show me African excellence')}>Show me African excellence</span>
+          </div>
+        </div>
+
+        {/* AI Response Box */}
+        {aiTyping && (
+          <div className="w-full max-w-3xl mx-auto mb-16 p-6 rounded-2xl bg-black/40 border border-white/10 text-center animate-pulse">
+            <div className="text-eterna-rose font-mono mb-2">SCANNING CINEMATIC UNIVERSE...</div>
+            <div className="flex justify-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-eterna-rose animate-bounce" />
+              <div className="w-2 h-2 rounded-full bg-eterna-rose animate-bounce delay-100" />
+              <div className="w-2 h-2 rounded-full bg-eterna-rose animate-bounce delay-200" />
             </div>
-            
-            {/* Dropdown for typing suggestions */}
-            {!aiMode && val.length > 0 && val.length < 4 && (
-              <div className="absolute top-[100%] left-0 right-0 bg-[#2b2b2b] border border-white/10 rounded-b-[8px] shadow-2xl overflow-hidden mt-[-16px] pt-[16px] z-10 transition-all animate-in slide-in-from-top-2">
-                <div className="p-3">
-                  <div className="text-[11px] font-semibold text-white/50 uppercase tracking-wider mb-2">Trending Suggestions</div>
-                  {['Action Movies', 'Sci-Fi Adventures', 'Award-Winning Dramas'].filter(s => s.toLowerCase().includes(val.toLowerCase())).map((suggestion, idx) => (
-                    <div 
-                      key={idx} 
-                      className="flex items-center gap-3 p-2 hover:bg-white/10 rounded-md cursor-pointer transition-colors"
-                      onClick={() => { setVal(suggestion); setSearch(suggestion, currentGenre); }}
-                    >
-                      <Search className="w-4 h-4 text-white/40" />
-                      <span className="text-[14px] font-medium text-white/90">{suggestion}</span>
-                    </div>
-                  ))}
-                  <div className="text-[11px] font-semibold text-white/50 uppercase tracking-wider mt-4 mb-2">Top Searched Content</div>
-                  {['Interstellar', 'The Dark Knight', 'Stranger Things'].filter(s => s.toLowerCase().includes(val.toLowerCase())).map((suggestion, idx) => (
-                    <div 
-                      key={idx} 
-                      className="flex items-center gap-3 p-2 hover:bg-white/10 rounded-md cursor-pointer transition-colors"
-                      onClick={() => { setVal(suggestion); setSearch(suggestion, currentGenre); }}
-                    >
-                      <Search className="w-4 h-4 text-[#46d369]/70" />
-                      <span className="text-[14px] font-medium text-white/90">{suggestion}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
+        {aiResponse && !aiTyping && (
+           <div className="w-full max-w-3xl mx-auto mb-16 p-6 md:p-8 rounded-2xl bg-black/60 border border-eterna-rose/30 shadow-[0_0_30px_rgba(225,29,72,0.1)] relative overflow-hidden backdrop-blur-xl">
+             <div className="absolute top-0 left-0 w-1 h-full bg-eterna-rose" />
+             <div className="flex items-start gap-4">
+               <div className="w-10 h-10 rounded-full bg-eterna-rose/20 flex items-center justify-center shrink-0">
+                 <Sparkles className="w-5 h-5 text-eterna-rose" />
+               </div>
+               <div>
+                 <div className="font-mono text-[10px] text-eterna-rose uppercase tracking-widest mb-2 font-bold">Curator AI Response</div>
+                 <pre className="font-sans text-white/80 text-[15px] whitespace-pre-wrap leading-relaxed">{aiResponse}</pre>
+               </div>
+             </div>
+           </div>
+        )}
 
-        {/* Categories */}
-        {!aiMode && (
-          <div className="flex gap-[8px] flex-wrap mb-[24px]">
-            {GENRES.map(g => (
-              <div 
-                key={g}
-                onClick={() => setSearch(val, g)}
-                className={`px-[16px] py-[6px] rounded-[4px] text-[13px] cursor-pointer border transition-all ${currentGenre === g ? 'bg-white border-white text-black font-semibold' : 'border-white/20 text-white hover:bg-white/10 hover:border-white/40'}`}
-              >
-                {g}
+        {/* Discovery Matrices */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10 mb-16">
+          
+          {/* Mood Wheel (Interactive Pills) */}
+          <div className="col-span-1 lg:col-span-2 glass-panel p-6 md:p-8 rounded-3xl border border-white/5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-eterna-violet/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="flex items-center gap-3 mb-6">
+              <Compass className="w-5 h-5 text-eterna-violet" />
+              <h2 className="text-xl font-bold uppercase tracking-wider">How do you feel?</h2>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {MOODS.map(mood => (
+                <div 
+                  key={mood}
+                  onClick={() => { setActiveMood(activeMood === mood ? "" : mood); setAiResponse(""); setPrompt(""); }}
+                  className={`px-5 py-2.5 rounded-full text-sm font-bold cursor-pointer transition-all ${activeMood === mood ? 'bg-eterna-violet text-black shadow-[0_0_20px_rgba(0,214,143,0.4)] scale-105' : 'bg-black/50 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white'}`}
+                >
+                  {mood}
+                </div>
+              ))}
+            </div>
+
+            {/* Cinematic DNA Sliders */}
+            <div className="mt-10 pt-8 border-t border-white/5">
+              <div className="flex items-center gap-3 mb-6">
+                 <Brain className="w-5 h-5 text-blue-400" />
+                 <h2 className="text-[14px] font-bold uppercase tracking-wider text-white/70">Cinematic DNA Profile</h2>
+              </div>
+              <div className="space-y-5">
+                {[
+                  { label: "Story Depth", left: "Light", right: "Deep", val: 70 },
+                  { label: "Emotional Impact", left: "Calm", right: "Intense", val: 40 },
+                  { label: "Intellectual Level", left: "Simple", right: "Complex", val: 85 }
+                ].map((slider, idx) => (
+                  <div key={idx} className="flex items-center gap-4">
+                    <div className="w-20 text-right text-[10px] font-mono text-white/40 uppercase">{slider.left}</div>
+                    <div className="flex-1 h-1.5 bg-black rounded-full relative">
+                       <div className="absolute top-0 left-0 h-full bg-blue-400/50 rounded-full" style={{ width: `${slider.val}%` }} />
+                       <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)] cursor-ew-resize hover:scale-125 transition-transform" style={{ left: `calc(${slider.val}% - 8px)` }} />
+                    </div>
+                    <div className="w-20 text-left text-[10px] font-mono text-white/40 uppercase">{slider.right}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-6">
+            {/* Time Selector */}
+            <div className="glass-panel p-6 rounded-3xl border border-white/5 relative overflow-hidden flex-1">
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-eterna-gold/10 rounded-full blur-[50px] pointer-events-none" />
+              <div className="flex items-center gap-3 mb-6">
+                <Clock className="w-5 h-5 text-eterna-gold" />
+                <h2 className="text-lg font-bold uppercase tracking-wider">I Have Time For...</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {TIMES.map(time => (
+                  <div 
+                    key={time}
+                    onClick={() => { setActiveTime(activeTime === time ? "" : time); setAiResponse(""); setPrompt(""); }}
+                    className={`py-3 text-center rounded-xl text-xs font-bold cursor-pointer transition-all ${activeTime === time ? 'bg-eterna-gold text-black shadow-[0_0_15px_rgba(245,176,65,0.4)]' : 'bg-black/50 text-white/60 border border-white/10 hover:bg-white/10 hover:text-white'}`}
+                  >
+                    {time}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Goal-Based Selector */}
+            <div className="glass-panel p-6 rounded-3xl border border-white/5 relative overflow-hidden flex-1">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-eterna-red/10 rounded-full blur-[50px] pointer-events-none" />
+              <div className="flex items-center gap-3 mb-6">
+                <Target className="w-5 h-5 text-eterna-rose" />
+                <h2 className="text-[14px] font-bold uppercase tracking-wider text-white/70">What are you working on?</h2>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {GOALS.slice(0, 7).map(goal => (
+                  <div 
+                    key={goal}
+                    onClick={() => { setActiveGoal(activeGoal === goal ? "" : goal); setAiResponse(""); setPrompt(""); }}
+                    className={`px-3 py-1.5 rounded-md text-[11px] font-mono cursor-pointer transition-all ${activeGoal === goal ? 'bg-eterna-rose text-white shadow-[0_0_10px_rgba(225,29,72,0.4)]' : 'bg-black border border-white/10 text-white/50 hover:text-white hover:border-white/30'}`}
+                  >
+                    {goal}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+        </div>
+
+        {/* Results Stream */}
+        <div className="mb-10">
+           <div className="flex items-center justify-between mb-8">
+             <div className="flex items-center gap-3">
+               <div className="w-2 h-8 bg-grad rounded-full" />
+               <h2 className="text-2xl font-bold tracking-tight">{aiResponse ? "Curated Collection" : activeMood ? `${activeMood} Cinematic Experiences` : activeGoal ? `Films for ${activeGoal}` : activeTime ? `Perfect for ${activeTime}` : "Global Galaxy Explorer"}</h2>
+             </div>
+             <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">{filtered.length} TITLES MATRICED</div>
+           </div>
+           
+           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+            {filtered.map(c => (
+              <div key={c.id} className="w-full">
+                <ContentCard content={c} />
               </div>
             ))}
-          </div>
-        )}
+           </div>
+        </div>
 
-        <div className={`text-[14px] font-semibold mb-[14px] ${aiMode && aiResponse ? 'text-[#46d369]' : 'text-white'}`}>
-          {label}
-        </div>
-        
-        {/* Grid Results */}
-        <div className={`grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-[12px] transition-opacity duration-300 ${aiTyping ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
-          {filtered.map(c => (
-             <div 
-               key={c.id} 
-               className="cursor-pointer group"
-               onClick={() => {
-                 setContent(c);
-                 go('details');
-               }}
-             >
-               <div className="aspect-[2/3] rounded-[4px] bg-[#222] flex items-center justify-center text-[42px] mb-[8px] relative overflow-hidden group-hover:ring-2 ring-white/50 transition-all">
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10"></div>
-                 <div className="absolute text-[42px] transition-transform duration-300 group-hover:scale-110 z-0">{c.emoji}</div>
-                 {c.tag && (
-                    <div className="absolute top-[8px] left-[8px] text-[10px] bg-eterna-red text-white px-[6px] py-[2px] rounded-sm font-bold uppercase z-20 shadow-md">
-                      {c.tag === 'new' ? 'NEW' : c.tag === 'hot' ? 'HOT' : '4K'}
-                    </div>
-                 )}
-               </div>
-               <div className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis text-white/90">{c.title}</div>
-               <div className="text-[11px] text-white/50">{c.sub} &bull; {c.rating} IMDb</div>
-             </div>
-          ))}
-        </div>
-        {filtered.length === 0 && !aiTyping && (
-          <div className="text-center text-[15px] text-white/50 mt-[60px] font-light">
-            No matches found. Look for something else?
-          </div>
-        )}
       </div>
 
       <BottomNav />
     </div>
   );
 }
+

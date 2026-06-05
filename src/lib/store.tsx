@@ -3,7 +3,7 @@ import { CATALOG, DOWNLOADS_INIT } from './data';
 import { Content, Download } from '../types';
 import { supabase } from './supabase';
 
-export type ScreenType = 'landing' | 'auth' | 'home' | 'search' | 'details' | 'player' | 'live' | 'dl' | 'profile' | 'partner' | 'admin';
+export type ScreenType = 'landing' | 'auth' | 'home' | 'search' | 'details' | 'player' | 'live' | 'dl' | 'profile' | 'partner' | 'admin' | 'originals' | 'series' | 'documentary' | 'sports' | 'music' | 'info' | 'payment' | 'schedule' | 'director';
 
 interface User {
   name: string;
@@ -12,18 +12,36 @@ interface User {
   initials: string;
 }
 
+export interface Review {
+  id: string;
+  contentId: number;
+  userId: string;
+  userName: string;
+  rating: number;
+  text: string;
+  timestamp: string;
+}
+
+interface UserSettings {
+  audioLang: string;
+  subtitleLang: string;
+}
+
 interface AppState {
   screen: ScreenType;
   history: ScreenType[];
   user: User | null;
+  settings: UserSettings;
   currentContent: Content;
   myList: number[];
   watchlist: number[];
   liked: number[];
   downloads: Download[];
+  reviews: Review[];
   searchQ: string;
   currentGenre: string;
   toastMsg: string | null;
+  currentInfoPage: string;
 }
 
 interface AppContextType extends AppState {
@@ -31,7 +49,10 @@ interface AppContextType extends AppState {
   goBack: () => void;
   signIn: (user: User) => void;
   signOut: () => void;
+  updateSettings: (settings: Partial<UserSettings>) => void;
+  addReview: (review: Omit<Review, 'id' | 'timestamp'>) => void;
   setContent: (content: Content) => void;
+  setInfoPage: (page: string) => void;
   setSearch: (q: string, genre: string) => void;
   toggleMyList: (id: number) => void;
   toggleWatchlist: (id: number) => void;
@@ -50,17 +71,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     screen: 'landing',
     history: ['landing'],
     user: null, // { name: 'Alex Rivera', email: 'alex@eterna.com', plan: 'Premium', initials: 'A' },
+    settings: { audioLang: 'English', subtitleLang: 'Off' },
     currentContent: CATALOG[0],
     myList: [],
     watchlist: [],
     liked: [],
     downloads: [...DOWNLOADS_INIT],
+    reviews: [],
     searchQ: '',
     currentGenre: 'All',
     toastMsg: null,
+    currentInfoPage: '',
   });
 
   const [toastTimeoutId, setToastTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+  // ... (supabase check will happen below, keeping existing)
+  // Need to splice in methods further down, let's just do a big replace block for the provider functions
+
 
   useEffect(() => {
     if (!supabase) return;
@@ -143,7 +171,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const updateSettings = (settings: Partial<UserSettings>) => {
+    setState(prev => ({ ...prev, settings: { ...prev.settings, ...settings } }));
+    showToast('Settings saved ✓');
+  };
+
+  const addReview = (review: Omit<Review, 'id' | 'timestamp'>) => {
+    setState(prev => ({
+      ...prev,
+      reviews: [...prev.reviews, {
+        ...review,
+        id: Math.random().toString(36).substr(2, 9),
+        timestamp: new Date().toISOString()
+      }]
+    }));
+    showToast('Review submitted! ✓');
+  };
+
   const setContent = (c: Content) => setState(prev => ({ ...prev, currentContent: c }));
+  const setInfoPage = (page: string) => setState(prev => ({ ...prev, currentInfoPage: page }));
   const setSearch = (searchQ: string, currentGenre: string) => setState(prev => ({ ...prev, searchQ, currentGenre }));
 
   const toggleArrayItem = (arr: number[], id: number) =>
@@ -160,9 +206,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const toggleWatchlist = (id: number) => {
     setState(prev => {
       const added = !prev.watchlist.includes(id);
-      showToast(added ? 'Added to Watchlist ❤️' : 'Removed from Watchlist');
+      showToast(added ? 'Added to Schedule ❤️' : 'Removed from Schedule');
       return { ...prev, watchlist: toggleArrayItem(prev.watchlist, id) };
     });
+    go('schedule');
   };
 
   const toggleLiked = (id: number) => {
@@ -191,7 +238,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       goBack,
       signIn,
       signOut,
+      updateSettings,
+      addReview,
       setContent,
+      setInfoPage,
       setSearch,
       toggleMyList,
       toggleWatchlist,

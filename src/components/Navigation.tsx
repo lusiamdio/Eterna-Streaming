@@ -1,4 +1,4 @@
-import { Search, Bell, Home, Radio, Download, User, ArrowLeft, Plus, Users, LayoutDashboard, PlayCircle } from "lucide-react";
+import { Search, Bell, Home, Radio, Download, User, ArrowLeft, Plus, Users, LayoutDashboard, PlayCircle, Tv } from "lucide-react";
 import { useAppStore, ScreenType } from "../lib/store";
 import React, { useState } from "react";
 
@@ -29,17 +29,42 @@ export function TopNav({
       
       {!showBack && typeof title === 'string' && title === 'Eterna' ? (
         <div className="flex items-center gap-8">
-          <div className="font-sans text-[26px] font-bold tracking-tight text-transparent bg-clip-text bg-grad cursor-pointer" onClick={() => go('home')}>
+          <div className="font-sans text-[26px] font-bold tracking-tight text-white cursor-pointer" onClick={() => go('home')}>
             {title}
           </div>
-          <div className="hidden lg:flex gap-6 text-[14px] font-semibold text-eterna-muted">
-             <div className="text-white cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('home')}>Discover</div>
-             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('home')}>Originals</div>
+          <div className="hidden lg:flex gap-6 text-[14px] font-semibold text-eterna-muted relative">
+             <div className="text-white cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => document.getElementById('discover-dropdown')?.classList.toggle('hidden')}>Discover</div>
+             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('originals')}>Originals</div>
              <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('search')}>Films</div>
-             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('home')}>Series</div>
-             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('home')}>Learning</div>
+             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('series')}>Series</div>
+             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('documentary')}>Documentary</div>
              <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('live')}>Live</div>
-             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('home')}>Community</div>
+             <div className="cursor-pointer hover:text-eterna-rose transition-colors flex items-center gap-1" onClick={() => go('schedule')}>Schedule</div>
+             
+             {/* Discover Dropdown */}
+             <div id="discover-dropdown" className="hidden absolute top-10 left-0 w-[400px] glass p-6 rounded-2xl shadow-2xl border border-white/10 z-[200]">
+               <h3 className="text-white font-bold mb-4 font-mono">GLOBAL FILM SEARCH</h3>
+               <div className="space-y-3">
+                 <input type="text" placeholder="Search by title..." className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-white outline-none focus:border-eterna-rose text-sm font-mono" />
+                 <div className="grid grid-cols-2 gap-3">
+                   <select className="bg-black/50 border border-white/10 rounded-lg p-2 text-white/70 outline-none text-sm font-mono">
+                     <option>Any Genre</option>
+                     <option>Action</option>
+                     <option>Drama</option>
+                     <option>Sci-Fi</option>
+                   </select>
+                   <select className="bg-black/50 border border-white/10 rounded-lg p-2 text-white/70 outline-none text-sm font-mono">
+                     <option>Any Location</option>
+                     <option>Africa</option>
+                     <option>North America</option>
+                     <option>Europe</option>
+                   </select>
+                 </div>
+                 <input type="text" placeholder="Director's name..." className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-white outline-none focus:border-eterna-rose text-sm font-mono" />
+                 <input type="text" placeholder="Production company..." className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-white outline-none focus:border-eterna-rose text-sm font-mono" />
+                 <button className="w-full bg-white text-black font-bold py-2 rounded-lg mt-2 hover:bg-gray-200 transition-colors uppercase tracking-wider text-sm" onClick={() => { document.getElementById('discover-dropdown')?.classList.add('hidden'); go('search'); }}>Search</button>
+               </div>
+             </div>
           </div>
         </div>
       ) : (
@@ -64,7 +89,7 @@ export function TopNav({
 
       {customRight}
 
-      {showProfile && user && (
+      {showProfile && (
         <div className="relative">
           <button className="flex items-center justify-center w-[40px] h-[40px] rounded-full text-eterna-muted hover:text-eterna-text hover:bg-white/10 transition-all" onClick={() => setNotifOpen(!notifOpen)}>
             <Bell className="w-[18px] h-[18px]" />
@@ -94,7 +119,7 @@ export function TopNav({
         </div>
       )}
 
-      {showProfile && user && (
+      {showProfile && (
         <div className="flex items-center gap-3">
           <div className="hidden lg:flex flex-col items-end">
             <span className="text-[10px] font-mono font-bold text-eterna-gold tracking-widest uppercase">Lvl 42 Viewer</span>
@@ -104,7 +129,7 @@ export function TopNav({
           </div>
           <div className="w-[36px] h-[36px] rounded-full bg-gradient-to-tr from-eterna-gold to-white p-[2px] flex-shrink-0 cursor-pointer hover:scale-110 transition-transform shadow-[0_0_10px_rgba(245,176,65,0.4)]" onClick={() => go('profile')}>
             <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-[12px] font-bold text-white">
-              {user.initials}
+              {user ? user.initials : 'U'}
             </div>
           </div>
         </div>
@@ -134,9 +159,9 @@ export function MobileBottomNav() {
             </div>
             <span className="text-[10px] font-bold text-white absolute -bottom-4 left-1/2 -translate-x-1/2">Create</span>
         </button>
-        <button onClick={() => go('home')} className="flex flex-col items-center gap-1 text-white/50 hover:text-white transition-colors">
-            <Users className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Community</span>
+        <button onClick={() => go('live')} className="flex flex-col items-center gap-1 text-white/50 hover:text-white transition-colors">
+            <Tv className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Live</span>
         </button>
         <button onClick={() => go('profile')} className="flex flex-col items-center gap-1 text-white/50 hover:text-white transition-colors">
             <User className="w-5 h-5" />
@@ -148,6 +173,7 @@ export function MobileBottomNav() {
 
 export function BottomNav() {
   const [openFaq, setOpenFaq] = React.useState<number | null>(null);
+  const { go, setInfoPage } = useAppStore();
 
   const faqs = [
     { q: "What is Infinite ShowTime?", a: "Infinite ShowTime is a streaming service that offers a wide variety of award-winning TV shows, movies, anime, documentaries, and more on thousands of internet-connected devices." },
@@ -159,9 +185,15 @@ export function BottomNav() {
   const links = [
     'Help Center', 'Account', 'Media Center',
     'Investor Relations', 'Jobs', 'Redeem Gift Cards', 'Buy Gift Cards',
-    'Ways to Watch', 'Terms of Use', 'Privacy', 'Cookie Preferences',
+    'Ways to Watch', 'Pricing Plans', 'Terms of Use', 'Privacy', 'Cookie Preferences',
     'Corporate Information', 'Contact Us', 'Speed Test', 'Legal Notices'
   ];
+
+  const handleLink = (e: React.MouseEvent, link: string) => {
+    e.preventDefault();
+    setInfoPage(link);
+    go('info');
+  };
 
   return (
     <footer className="bg-[#141414] text-[#757575] py-16 px-6 md:px-12 w-full mt-auto border-t border-white/10 text-[13px] relative z-[100]">
@@ -189,11 +221,14 @@ export function BottomNav() {
         <p className="mb-8 text-[15px]">Questions? Call <a href="tel:0800100046" className="hover:underline">0800 100 046</a></p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-4 mb-8">
           {links.map(link => (
-            <a key={link} href="#" className="hover:underline">{link}</a>
+            <a key={link} href="#" className="hover:underline" onClick={(e) => handleLink(e, link)}>{link}</a>
           ))}
         </div>
         <div className="mb-4">
-          <button className="border border-[#757575] bg-transparent text-[#757575] px-4 py-2 flex items-center gap-2 hover:text-white hover:border-white transition-colors">
+          <button 
+            className="border border-[#757575] bg-transparent text-[#757575] px-4 py-2 flex items-center gap-2 hover:text-white hover:border-white transition-colors"
+            onClick={(e) => handleLink(e, 'Service Code')}
+          >
             <Radio className="w-4 h-4" />
             Service Code
           </button>

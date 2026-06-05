@@ -16,6 +16,7 @@ export interface Episode {
 export interface Content {
   id: number;
   emoji: string;
+  coverUrl?: string;
   title: string;
   sub: string;
   tag: 'new' | 'hot' | '4k' | '';

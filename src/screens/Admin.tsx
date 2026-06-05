@@ -8,7 +8,7 @@ import {
   ArrowLeft, LayoutDashboard, Film, BarChart3, Users,
   Activity, DollarSign, Brain, ShieldAlert, FileCheck, CheckCircle2, XCircle,
   ShoppingBag, Megaphone, UserCheck, Lock, Globe, Clock,
-  Zap, Play, Download
+  Zap, Play, Download, Video
 } from 'lucide-react';
 
 export function AdminScreen() {

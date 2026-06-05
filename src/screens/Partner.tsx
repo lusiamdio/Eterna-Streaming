@@ -5,6 +5,9 @@ import {
   Settings, UploadCloud, PlayCircle, Clock, Globe, ArrowUpRight, CheckCircle2, XCircle
 } from 'lucide-react';
 
+import { DashboardCenter, ArsenalCenter, IntelligenceCenter, TreasuryCenter, AllianceCenter } from './partner/PartnerCenters';
+import { SettingsCenter } from './partner/SettingsCenter';
+
 export function PartnerScreen() {
   const [onboarded, setOnboarded] = useState(false);
   const [step, setStep] = useState(0);
@@ -20,13 +23,58 @@ function PartnerControlCenter() {
   const { go } = useAppStore();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showUpload, setShowUpload] = useState(false);
+  const [isNovaOpen, setIsNovaOpen] = useState(false);
+  const [novaInput, setNovaInput] = useState("");
+  const [novaMessages, setNovaMessages] = useState<{role: 'user' | 'ai', text: string}[]>([
+    {role: 'ai', text: 'System Online. Eterna Oracle / Pulse ready. How can I assist you with your global telemetry or strategy today?'}
+  ]);
+  const [isNovaLoading, setIsNovaLoading] = useState(false);
+
+  const handleNovaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!novaInput.trim()) return;
+    
+    const userText = novaInput.trim();
+    setNovaMessages(prev => [...prev, {role: 'user', text: userText}]);
+    setNovaInput("");
+    setIsNovaLoading(true);
+
+    try {
+      const res = await fetch('/api/gemini/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: userText })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      setNovaMessages(prev => [...prev, {role: 'ai', text: data.text}]);
+    } catch (err: any) {
+      console.error(err);
+      setNovaMessages(prev => [...prev, {role: 'ai', text: 'ERROR: Unable to reach Eterna neural network. Please check your connection.'}]);
+    } finally {
+      setIsNovaLoading(false);
+    }
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard': return <DashboardCenter setShowUpload={setShowUpload} />;
+      case 'content': return <ArsenalCenter setShowUpload={setShowUpload} />;
+      case 'analytics': return <IntelligenceCenter />;
+      case 'revenue': return <TreasuryCenter />;
+      case 'community': return <AllianceCenter />;
+      case 'settings': return <SettingsCenter />;
+      default: return <DashboardCenter setShowUpload={setShowUpload} />;
+    }
+  };
 
   return (
     <div className="flex h-screen bg-eterna-bg text-white font-sans overflow-hidden">
       
       {/* Sidebar - Floating Glass */}
       <div className="w-[80px] md:w-[260px] flex flex-col p-4 shrink-0 relative z-20">
-        <div className="bg-eterna-bg/40 backdrop-blur-3xl border border-white/5 rounded-2xl h-full flex flex-col p-4 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+        <div className="bg-eterna-bg/40 backdrop-blur-3xl border border-white/5 rounded-2xl h-[calc(100vh-2rem)] flex flex-col p-4 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
           <div className="px-2 mb-10 flex items-center gap-4 mt-2">
             <div className="w-10 h-10 bg-grad rounded-xl flex items-center justify-center shrink-0 cursor-pointer shadow-lg hover:scale-105 transition-transform" onClick={() => go('landing')}>
               <ArrowLeft className="w-5 h-5 text-white" />
@@ -73,154 +121,85 @@ function PartnerControlCenter() {
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-eterna-rose/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-eterna-violet/10 rounded-full blur-[100px] pointer-events-none" />
         
-        <div className="p-6 md:p-8 max-w-[1400px] mx-auto relative z-10 mt-4">
-          
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-            <div>
-              <h1 className="text-3xl md:text-5xl font-bold mb-2 tracking-tight">System Online, <span className="text-eterna-rose">Director.</span></h1>
-              <p className="text-white/50 text-[15px] font-mono">Operations normal. Here's your global telemetry.</p>
-            </div>
-            
-            <button 
-              className="bg-white hover:bg-gray-200 transition-colors text-black px-6 py-3 rounded-full font-bold text-[14px] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-105"
-              onClick={() => setShowUpload(true)}
-            >
-              <UploadCloud className="w-5 h-5" />
-              <span>Initiate Upload</span>
-            </button>
-          </div>
+        {renderContent()}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatsCard title="Global Views" value="2.4M" change="+12%" icon={<PlayCircle className="text-blue-400 w-5 h-5 drop-shadow-[0_0_10px_rgba(96,165,250,0.8)]" />} />
-            <StatsCard title="Watch Hours" value="482K" change="+5.2%" icon={<Clock className="text-eterna-violet w-5 h-5 drop-shadow-[0_0_10px_rgba(0,214,143,0.8)]" />} />
-            <StatsCard title="Treasury (USD)" value="$15,420" change="+18%" icon={<DollarSign className="text-eterna-gold w-5 h-5 drop-shadow-[0_0_10px_rgba(245,176,65,0.8)]" />} />
-            <StatsCard title="Followers Secured" value="1,204" change="+2.4%" icon={<Users className="text-eterna-rose w-5 h-5 drop-shadow-[0_0_10px_rgba(60,174,255,0.8)]" />} />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Interactive Intelligence Dashboard - Bloomberg/Tesla style */}
-            <div className="lg:col-span-2 glass-panel rounded-2xl p-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-eterna-rose/20 rounded-full blur-[50px] pointer-events-none group-hover:scale-150 transition-transform duration-700" />
-              
-              <div className="flex justify-between items-center mb-8 relative z-10">
-                <h2 className="font-bold text-[20px] uppercase tracking-wider text-white">Performance Map</h2>
-                <select className="bg-black/50 border border-white/10 rounded font-mono px-3 py-1.5 text-[12px] text-white/70 outline-none backdrop-blur-md">
-                  <option>T-MINUS 30 DAYS</option>
-                  <option>YTD (Year to Date)</option>
-                </select>
-              </div>
-              <div className="h-[220px] flex items-end justify-between gap-1 border-b border-white/10 pb-4 relative z-10 overflow-hidden">
-                {/* Cyberpunk style bar chart */}
-                {[40, 65, 45, 80, 55, 90, 75, 100, 85, 110, 95, 120].map((h, i) => (
-                  <div key={i} className="flex-1 bg-gradient-to-t from-eterna-rose/20 to-eterna-rose hover:to-eterna-violet rounded-t-[3px] transition-all duration-300 relative group/bar flex justify-center" style={{ height: `${h}%` }}>
-                    <div className="absolute top-0 w-full h-[2px] bg-white shadow-[0_0_10px_white]" />
-                    <div className="absolute -top-8 bg-black/80 backdrop-blur-sm border border-eterna-rose/30 text-[10px] font-mono px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap shadow-[0_0_15px_rgba(60,174,255,0.3)]">
-                      {Math.floor(h * 1.5 * 10)} CR
-                    </div>
+        {/* Nova AI Helper overlaying dashboard */}
+        <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[200]">
+           <div className="relative group cursor-pointer" onClick={() => setIsNovaOpen(!isNovaOpen)}>
+              <div className="absolute -inset-2 bg-gradient-to-r from-eterna-rose to-eterna-violet rounded-full blur-xl opacity-50 group-hover:opacity-100 transition-opacity duration-300 animate-pulse" />
+              <button className={`relative w-16 h-16 bg-black border ${isNovaOpen ? 'border-eterna-rose' : 'border-white/20'} rounded-full flex items-center justify-center shadow-2xl overflow-hidden backdrop-blur-2xl transition-all`}>
+                  <div className="absolute inset-0 bg-grad opacity-20" />
+                  <div className="flex flex-col items-center justify-center">
+                    {isNovaOpen ? (
+                      <XCircle className="w-6 h-6 text-eterna-rose" />
+                    ) : (
+                      <>
+                        <span className="w-4 h-4 rounded-full bg-eterna-rose mb-1 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                        <span className="text-[9px] font-black text-white tracking-widest drop-shadow-md">NOVA</span>
+                      </>
+                    )}
                   </div>
-                ))}
-              </div>
-              <div className="flex justify-between text-[10px] font-mono text-white/40 mt-4 relative z-10">
-                <span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span>
-              </div>
-            </div>
+              </button>
+           </div>
+        </div>
 
-            <div className="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-eterna-violet/20 blur-[60px] pointer-events-none" />
-              <div className="relative z-10">
-                 <h2 className="font-bold text-[18px] mb-6 uppercase tracking-wider">Revenue Stream</h2>
-                 <div className="space-y-4">
-                   <div className="flex justify-between items-center group">
-                     <span className="text-white/60 text-[13px] font-mono group-hover:text-white transition-colors">AD REV [ALPHON]</span>
-                     <span className="font-bold">$5,000</span>
-                   </div>
-                   <div className="flex justify-between items-center group">
-                     <span className="text-white/60 text-[13px] font-mono group-hover:text-white transition-colors">SUBS [TERRA]</span>
-                     <span className="font-bold text-eterna-rose">$7,000</span>
-                   </div>
-                   <div className="flex justify-between items-center group">
-                     <span className="text-white/60 text-[13px] font-mono group-hover:text-white transition-colors">PPV [VORTEX]</span>
-                     <span className="font-bold">$2,000</span>
-                   </div>
-                   <div className="flex justify-between items-center group">
-                     <span className="text-white/60 text-[13px] font-mono group-hover:text-white transition-colors">TIP JARS</span>
-                     <span className="font-bold">$1,420</span>
-                   </div>
-                 </div>
+        {/* Nova AI Sidebar */}
+        <div className={`fixed top-0 right-0 h-full w-full md:w-[400px] bg-[#0a0a0a]/95 backdrop-blur-3xl border-l border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] z-[150] transition-transform duration-500 flex flex-col ${isNovaOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+           <div className="p-6 border-b border-white/10 flex items-center gap-4 bg-gradient-to-r from-[#111] to-eterna-rose/5">
+              <div className="w-10 h-10 rounded-full bg-eterna-rose/20 flex items-center justify-center border border-eterna-rose shadow-[0_0_15px_rgba(225,29,72,0.3)]">
+                 <span className="text-xl">✨</span>
               </div>
-              
-              <div className="pt-6 border-t border-white/10 mt-6 relative z-10">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-white/50 text-[12px] font-mono font-semibold">TOTAL BAL</span>
-                  <span className="font-bold text-[28px] text-transparent bg-clip-text bg-grad tracking-tight">$15,420</span>
+              <div>
+                 <h3 className="font-bold text-white text-lg tracking-wide">Eterna Oracle</h3>
+                 <p className="text-[10px] text-eterna-rose font-mono uppercase tracking-widest animate-pulse">Neural Network Active</p>
+              </div>
+           </div>
+
+           <div className="flex-1 overflow-y-auto p-6 space-y-6 hide-scrollbar flex flex-col">
+              {novaMessages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}>
+                   <div className={`max-w-[85%] rounded-2xl p-4 text-[14px] ${
+                     msg.role === 'user' 
+                       ? 'bg-white/10 border border-white/20 text-white rounded-br-none' 
+                       : 'bg-black/50 border border-eterna-rose/30 text-white/90 rounded-bl-none shadow-[0_0_15px_rgba(225,29,72,0.1)]'
+                   }`}>
+                     {msg.role === 'ai' && <div className="text-[10px] font-bold text-eterna-rose mb-2 font-mono uppercase tracking-widest">Oracle Response</div>}
+                     <div className="markdown-body text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</div>
+                   </div>
                 </div>
-                <button className="w-full mt-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[12px] font-bold py-2 rounded-lg transition-colors tracking-wide">
-                  INITIATE WITHDRAWAL
-                </button>
-              </div>
-            </div>
-          </div>
+              ))}
+              {isNovaLoading && (
+                <div className="flex justify-start">
+                   <div className="max-w-[85%] rounded-2xl p-4 bg-black/50 border border-eterna-violet/30 rounded-bl-none">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 rounded-full bg-eterna-violet animate-bounce" />
+                        <span className="w-2 h-2 rounded-full bg-eterna-violet animate-bounce" style={{animationDelay: '0.2s'}} />
+                        <span className="w-2 h-2 rounded-full bg-eterna-violet animate-bounce" style={{animationDelay: '0.4s'}} />
+                      </div>
+                   </div>
+                </div>
+              )}
+           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div className="glass-panel rounded-2xl p-6 border-t-2 border-t-eterna-violet">
-              <h2 className="font-bold text-[18px] mb-4 uppercase tracking-wider">Arsenal Status</h2>
-              <div className="space-y-3">
-                <StatusRow title="Beyond the Stars (Feature)" status="ONLINE" type="success" />
-                <StatusRow title="Echoes of Time (Short)" status="VERIFIED" type="info" />
-                <StatusRow title="Unknown Horizons S2" status="AI SCANNING..." type="warning" />
-                <StatusRow title="The Lost Signal" status="AUDIO DESYNC" type="error" />
-              </div>
-            </div>
-
-            <div className="glass-panel rounded-2xl p-6 border-t-2 border-t-eterna-rose">
-              <h2 className="font-bold text-[18px] mb-4 uppercase tracking-wider">Audience Intelligence</h2>
-              <div className="flex flex-col gap-5 mt-4">
-                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                       <Globe className="w-5 h-5 text-eterna-rose" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between text-[12px] mb-2 font-mono"><span className="text-white/60">SECTOR: N-AMERICA</span><span className="font-bold text-eterna-rose">45%</span></div>
-                      <div className="w-full bg-black/50 h-2 rounded-full overflow-hidden border border-white/5"><div className="bg-eterna-rose h-2 rounded-full shadow-[0_0_10px_rgba(60,174,255,0.8)]" style={{width: '45%'}} /></div>
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                       <Globe className="w-5 h-5 text-eterna-violet" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between text-[12px] mb-2 font-mono"><span className="text-white/60">SECTOR: EUROPE</span><span className="font-bold text-eterna-violet">32%</span></div>
-                      <div className="w-full bg-black/50 h-2 rounded-full overflow-hidden border border-white/5"><div className="bg-eterna-violet h-2 rounded-full shadow-[0_0_10px_rgba(0,214,143,0.8)]" style={{width: '32%'}} /></div>
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                       <Globe className="w-5 h-5 text-eterna-gold" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between text-[12px] mb-2 font-mono"><span className="text-white/60">SECTOR: ASIA</span><span className="font-bold text-eterna-gold">15%</span></div>
-                      <div className="w-full bg-black/50 h-2 rounded-full overflow-hidden border border-white/5"><div className="bg-eterna-gold h-2 rounded-full shadow-[0_0_10px_rgba(245,176,65,0.8)]" style={{width: '15%'}} /></div>
-                    </div>
-                 </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Nova AI Helper overlaying dashboard */}
-          <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[200]">
-             <div className="relative group">
-                <div className="absolute -inset-2 bg-gradient-to-r from-eterna-rose to-eterna-violet rounded-full blur-xl opacity-50 group-hover:opacity-100 transition-opacity duration-300 animate-pulse" />
-                <button className="relative w-16 h-16 bg-black border border-white/20 rounded-full flex items-center justify-center shadow-2xl overflow-hidden backdrop-blur-2xl">
-                    <div className="absolute inset-0 bg-grad opacity-20" />
-                    <div className="flex flex-col items-center justify-center">
-                      <span className="w-4 h-4 rounded-full bg-eterna-rose mb-1 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
-                      <span className="text-[9px] font-black text-white tracking-widest drop-shadow-md">NOVA AI</span>
-                    </div>
-                </button>
-             </div>
-          </div>
-
+           <div className="p-4 bg-black/50 border-t border-white/10">
+              <form onSubmit={handleNovaSubmit} className="relative">
+                 <input 
+                   type="text" 
+                   value={novaInput}
+                   onChange={e => setNovaInput(e.target.value)}
+                   disabled={isNovaLoading}
+                   placeholder="Ask Eterna Oracle..." 
+                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-sm text-white outline-none focus:border-eterna-rose transition-colors disabled:opacity-50 pr-12 font-mono"
+                 />
+                 <button 
+                   type="submit" 
+                   disabled={!novaInput.trim() || isNovaLoading}
+                   className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-eterna-rose hover:bg-eterna-rose/80 rounded-lg flex items-center justify-center text-white transition-colors disabled:opacity-50 disabled:hover:bg-eterna-rose"
+                 >
+                   <ArrowUpRight className="w-5 h-5" />
+                 </button>
+              </form>
+           </div>
         </div>
       </div>
 
@@ -581,7 +560,8 @@ function UploadModal({ onClose }: { onClose: () => void }) {
 }
 
 function PartnerOnboarding({ flowStep, setFlowStep, setOnboarded }: any) {
-  const { go } = useAppStore();
+  const { go, setInfoPage } = useAppStore();
+  const [showLogin, setShowLogin] = React.useState(false);
 
   const handleNext = () => setFlowStep(flowStep + 1);
 
@@ -593,30 +573,78 @@ function PartnerOnboarding({ flowStep, setFlowStep, setOnboarded }: any) {
 
       {/* Header */}
       <div className="p-6 border-b border-white/5 flex items-center gap-4 bg-black/40 backdrop-blur-3xl relative z-20">
-        <div className="w-10 h-10 bg-grad rounded-xl flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition-transform shadow-[0_0_15px_rgba(225,29,72,0.4)]" onClick={() => flowStep === 0 ? go('landing') : setFlowStep(flowStep - 1)}>
+        <div className="w-10 h-10 bg-grad rounded-xl flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition-transform shadow-[0_0_15px_rgba(225,29,72,0.4)]" onClick={() => {
+          if (showLogin) {
+            setShowLogin(false);
+          } else if (flowStep === 0) {
+            go('landing');
+          } else {
+            setFlowStep(flowStep - 1);
+          }
+        }}>
           <ArrowLeft className="w-5 h-5 text-white" />
         </div>
         <div>
-          <span className="font-bold text-2xl text-transparent bg-clip-text bg-grad tracking-tight leading-none block">Eterna</span>
+          <span className="font-bold text-2xl text-white tracking-tight leading-none block">Eterna</span>
           <span className="text-[10px] uppercase text-white/50 tracking-widest font-bold">Creator Ecosystem</span>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto p-6 md:p-12 relative pb-32 z-20 hide-scrollbar">
-        {flowStep === 0 && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 text-center flex flex-col items-center justify-center h-full max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">Bring Your Stories to the World.<br/><span className="text-transparent bg-clip-text bg-grad">Monetize Your Creativity.</span></h1>
+      <div className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto p-6 md:p-12 md:px-12 pt-10 md:pt-16 pb-40 relative z-20 hide-scrollbar">
+        {showLogin ? (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-md mx-auto py-12">
+            <h2 className="text-3xl font-bold mb-2">Partner Portal Login</h2>
+            <p className="text-white/50 mb-8">Sign in to access your creator dashboard.</p>
+            
+            <div className="space-y-4 mb-8">
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">Email Address</label>
+                <input 
+                  type="email" 
+                  placeholder="Enter your partner email" 
+                  className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-eterna-gold transition-colors font-mono text-sm placeholder:text-white/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">Password</label>
+                <input 
+                  type="password" 
+                  placeholder="Enter your password" 
+                  className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-eterna-gold transition-colors font-mono text-sm placeholder:text-white/20"
+                />
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setOnboarded(true)} 
+              className="w-full bg-eterna-gold hover:bg-eterna-gold/80 text-black py-4 rounded-xl font-bold uppercase tracking-widest text-sm transition-colors shadow-[0_0_20px_rgba(245,176,65,0.3)] hover:shadow-[0_0_30px_rgba(245,176,65,0.5)] mb-6"
+            >
+              Sign In
+            </button>
+            
+            <div className="text-center">
+              <button 
+                onClick={() => setShowLogin(false)} 
+                className="text-eterna-gold font-bold text-sm underline decoration-white/20 underline-offset-4 hover:decoration-eterna-gold transition-colors"
+              >
+                Don't have an account? Sign up
+              </button>
+            </div>
+          </div>
+        ) : flowStep === 0 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 text-center flex flex-col items-center min-h-full max-w-3xl mx-auto py-8 lg:py-20">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight mt-auto">Bring Your Stories to the World.<br/><span className="text-white">Monetize Your Creativity.</span></h1>
             <p className="text-white/60 text-lg md:text-xl mb-12 font-mono max-w-2xl">
               Join thousands of filmmakers, studios, producers, and content creators distributing premium content to a global audience while earning revenue through streaming, subscriptions, advertising, rentals, and licensing opportunities.
             </p>
             <div className="flex flex-wrap gap-4 justify-center mb-16">
               <button onClick={handleNext} className="bg-white hover:bg-gray-200 text-black px-8 py-3.5 rounded-full font-black text-[15px] uppercase tracking-wider shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-105 transition-all">Become a Partner</button>
-              <button className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-3.5 rounded-full font-bold text-[15px] transition-colors backdrop-blur-md">Explore Benefits</button>
+              <button onClick={() => { setInfoPage('Partner Pricing'); go('info'); }} className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-3.5 rounded-full font-bold text-[15px] transition-colors backdrop-blur-md">Explore Benefits</button>
               <button className="bg-transparent border border-white/10 hover:bg-white/5 text-white px-8 py-3.5 rounded-full font-bold text-[15px] transition-colors">Schedule a Demo</button>
             </div>
             
-            <div className="text-left w-full">
+            <div className="text-left w-full mb-auto">
               <h2 className="text-2xl font-bold mb-8 text-center text-white/50 uppercase tracking-widest text-[12px] font-mono">Why Join Our Platform?</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="glass-panel p-6 rounded-2xl hover:-translate-y-1 transition-transform cursor-pointer group">
@@ -648,11 +676,21 @@ function PartnerOnboarding({ flowStep, setFlowStep, setOnboarded }: any) {
                   <p className="text-white/50 text-[14px] font-mono">Access funding, promotion, and strategic partnerships.</p>
                 </div>
               </div>
+              
+              <div className="flex justify-center mt-12 mb-8">
+                <button 
+                  onClick={() => setShowLogin(true)} 
+                  className="group flex flex-col items-center justify-center gap-2 hover:opacity-80 transition-opacity"
+                >
+                  <span className="text-[14px] font-mono font-bold uppercase tracking-widest text-white/50 group-hover:text-white transition-colors">Already a partner?</span>
+                  <span className="text-eterna-gold font-bold text-lg underline decoration-white/20 underline-offset-4 group-hover:decoration-eterna-gold transition-colors">Log In Here</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
 
-        {flowStep === 1 && (
+        {!showLogin && flowStep === 1 && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto">
             <h2 className="text-3xl font-bold mb-2">Select Your Partnership Category</h2>
             <p className="text-white/50 mb-8">Choose the profile that best describes your operations.</p>
@@ -1027,18 +1065,12 @@ function PartnerOnboarding({ flowStep, setFlowStep, setOnboarded }: any) {
 
       {/* Floating Bottom Nav for flow control */}
       {flowStep > 0 && flowStep < 9 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-[#0a0a0a] border-t border-white/10 p-4 md:p-6 flex justify-between items-center z-50">
-           <div className="flex gap-2">
-             {[...Array(9)].map((_, i) => (
-                <div key={i} className={`w-2 h-2 rounded-full ${flowStep === i+1 ? 'bg-eterna-red' : flowStep > i+1 ? 'bg-white/40' : 'bg-white/10'}`}></div>
-             ))}
-           </div>
-           
+        <div className="fixed bottom-0 right-0 p-6 md:p-12 z-50">
            <div className="flex gap-4">
              {flowStep === 8 ? (
-                <button onClick={handleNext} className="bg-eterna-red text-white font-bold px-8 py-3 rounded-md hover:bg-eterna-rose transition">Submit Application</button>
+                <button onClick={handleNext} className="bg-eterna-violet text-black font-black px-8 py-3.5 rounded-full uppercase tracking-wider hover:brightness-110 transition shadow-[0_0_20px_rgba(0,214,143,0.4)] hover:-translate-y-1">Submit Application</button>
              ) : (
-                <button onClick={handleNext} className="bg-white text-black font-bold px-8 py-3 rounded-md hover:bg-white/80 transition">Continue</button>
+                <button onClick={handleNext} className="bg-white text-black font-black px-8 py-3.5 rounded-full uppercase tracking-wider hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:-translate-y-1">Continue</button>
              )}
            </div>
         </div>

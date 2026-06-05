@@ -22,6 +22,42 @@ async function startServer() {
   app.use(express.json());
 
   // API endpoints
+  app.get("/api/movies/titles/:id/main_actors", async (req, res) => {
+    try {
+      const apiKey = process.env.RAPIDAPI_KEY || '17f45de316msh2d6f6e091858c7bp19a1e6jsn6c70b05dbc06';
+      const response = await fetch(`https://moviesdatabase.p.rapidapi.com/titles/${req.params.id}/main_actors`, {
+        headers: {
+          'x-rapidapi-host': 'moviesdatabase.p.rapidapi.com',
+          'x-rapidapi-key': apiKey
+        }
+      });
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.error("RapidAPI movies Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/movies/actors/news/:id", async (req, res) => {
+    try {
+      const apiKey = process.env.RAPIDAPI_KEY || '17f45de316msh2d6f6e091858c7bp19a1e6jsn6c70b05dbc06';
+      const response = await fetch(`https://imdb232.p.rapidapi.com/api/actors/get-related-news?limit=25&nm=${req.params.id}`, {
+        headers: {
+          'x-rapidapi-host': 'imdb232.p.rapidapi.com',
+          'x-rapidapi-key': apiKey
+        }
+      });
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.error("RapidAPI imdb Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/gemini/chat", async (req, res) => {
     try {
       const { prompt } = req.body;

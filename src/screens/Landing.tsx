@@ -40,7 +40,7 @@ export function LandingScreen() {
         {/* Trending Now Section */}
         <div className="relative z-10 w-full max-w-7xl mt-16 mx-auto text-left">
           <h2 className="text-2xl font-bold text-white mb-6 px-4">Trending Now: African & Hollywood Hits</h2>
-          <div className="flex overflow-x-auto gap-4 px-4 pb-8 custom-scrollbar">
+          <div className="grid grid-rows-2 grid-flow-col gap-4 px-4 pb-8 overflow-x-auto hide-scrollbar snap-x">
             {[
               { title: "The Black Book", url: "https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=300&auto=format&fit=crop" },
               { title: "Dune: Part Two", url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=300&auto=format&fit=crop" },
@@ -51,19 +51,24 @@ export function LandingScreen() {
               { title: "A Tribe Called Judah", url: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?q=80&w=300&auto=format&fit=crop" },
               { title: "The Batman", url: "https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?q=80&w=300&auto=format&fit=crop" },
               { title: "Battle on Buka Street", url: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=300&auto=format&fit=crop" },
-              { title: "Joker", url: "https://images.unsplash.com/photo-1620177088258-c837568add98?q=80&w=300&auto=format&fit=crop" },
-              { title: "Jagun Jagun", url: "https://images.unsplash.com/photo-1579970966967-3363f8bb6fe3?q=80&w=300&auto=format&fit=crop" },
+              { title: "Joker", url: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=300&auto=format&fit=crop" },
+              { title: "Jagun Jagun", url: "https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?q=80&w=300&auto=format&fit=crop" },
               { title: "Top Gun: Maverick", url: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=300&auto=format&fit=crop" },
-              { title: "King of Boys", url: "https://images.unsplash.com/photo-1563810145620-3b9500045233?q=80&w=300&auto=format&fit=crop" },
+              { title: "King of Boys", url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=300&auto=format&fit=crop" },
               { title: "Inception", url: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=300&auto=format&fit=crop" },
-              { title: "Sista", url: "https://images.unsplash.com/photo-1524673323-9bf0800b6564?q=80&w=300&auto=format&fit=crop" },
+              { title: "Sista", url: "https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=300&auto=format&fit=crop" },
             ].map((film, idx) => (
               <div 
                 key={idx} 
-                className="relative w-[140px] md:w-[180px] shrink-0 aspect-[2/3] rounded-md overflow-hidden cursor-pointer hover:scale-105 transition-transform border border-white/10"
+                className="relative w-[140px] md:w-[180px] shrink-0 aspect-[2/3] rounded-md overflow-hidden cursor-pointer hover:scale-105 transition-transform border border-white/10 snap-start"
                 onClick={() => go('auth')}
               >
-                <img src={film.url} alt={film.title} className="w-full h-full object-cover" />
+                <img 
+                  src={film.url} 
+                  alt={film.title} 
+                  className="w-full h-full object-cover bg-black/50" 
+                  onError={(e) => { e.currentTarget.src = `https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=300&auto=format&fit=crop`; }}
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-3">
                   <span className="text-white font-bold text-[13px] leading-tight drop-shadow-md">{film.title}</span>
                 </div>
