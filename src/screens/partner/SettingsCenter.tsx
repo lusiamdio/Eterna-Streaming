@@ -3,7 +3,7 @@ import {
   Building, Users, DollarSign, Film, Globe, Shield, Sparkles, 
   Unplug, MessageSquare, Palette, Bell, BarChart, Code, 
   CreditCard, FileText, Settings as SettingsIcon,
-  CheckCircle2, AlertCircle, Save, Upload, Activity, Download
+  CheckCircle2, AlertCircle, Save, Upload, Activity, Download, Mail, Plus
 } from 'lucide-react';
 
 import {
@@ -16,7 +16,9 @@ import {
   IntegrationAuthModal,
   BrandIdentityModal,
   ThemeStudioModal,
-  DataExportModal
+  DataExportModal,
+  NotificationRuleModal,
+  GenericRedirectModal
 } from './SettingsModals';
 
 export function SettingsCenter() {
@@ -389,7 +391,7 @@ function SecuritySettings() {
             <h3 className="font-bold text-lg text-red-400 mb-1 flex items-center gap-2"><Shield className="w-5 h-5"/> Required Multi-Factor Authentication (MFA)</h3>
             <p className="text-sm text-white/70 leading-relaxed max-w-xl">Enforce strict 2FA protection for all users accessing Treasury or Administrative functions to meet SOC-2 compliance.</p>
          </div>
-         <button className="bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-[0_0_15px_rgba(239,68,68,0.3)] transition-all whitespace-nowrap w-full sm:w-auto">Manage MFA Enclaves</button>
+         <button onClick={() => setActiveModal('Manage MFA Enclaves')} className="bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-[0_0_15px_rgba(239,68,68,0.3)] transition-all whitespace-nowrap w-full sm:w-auto">Manage MFA Enclaves</button>
       </div>
       
       <div className="bg-[#111] border border-white/5 rounded-2xl p-6 shadow-xl max-w-4xl">
@@ -422,6 +424,7 @@ function SecuritySettings() {
       </div>
       
       {activeModal === 'revoke' && <SecurityResponseModal onClose={() => setActiveModal(null)} />}
+      {activeModal && activeModal !== 'revoke' && <GenericRedirectModal target={activeModal} onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
@@ -624,87 +627,168 @@ function AuditLogsSettings() {
 }
 
 function CommunicationSettings() {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
   return (
-    <div className="p-8 space-y-8 animate-in fade-in">
+    <div className="p-8 space-y-8 animate-in fade-in relative">
       <div>
         <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><MessageSquare className="text-blue-400" /> Communication Center</h2>
         <p className="text-white/50 text-sm max-w-2xl">Internal messaging, team chat, project rooms, secure file exchange, and video conferencing hub.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {['Team Chat', 'Project Rooms', 'Secure File Exchange', 'Video Conferencing', 'Voice Calls', 'Calendar Scheduling', 'Meeting Notes AI', 'Contract Sharing', 'Digital Signatures', 'Announcement Center', 'Broadcast Messaging', 'Partner Directory', 'Contact Management CRM', 'Help Desk Ticketing', 'Customer Support Inbox'].map((item, i) => (
-           <div key={i} className="bg-[#111] border border-white/5 p-4 rounded-xl hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-3">
+           <div key={i} onClick={() => setActiveModal(item)} className="bg-[#111] border border-white/5 p-4 rounded-xl hover:bg-white/5 hover:border-white/30 transition-colors cursor-pointer flex items-center gap-3">
              <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center"><MessageSquare className="w-4 h-4 text-blue-400"/></div>
              <span className="font-bold text-sm tracking-wide">{item}</span>
            </div>
         ))}
       </div>
+      {activeModal && <GenericRedirectModal target={activeModal} onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
 
 function NotificationSettings() {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [digest, setDigest] = useState('weekly');
+
   return (
-    <div className="p-8 space-y-8 animate-in fade-in">
+    <div className="p-8 space-y-8 animate-in fade-in relative">
       <div>
         <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><Bell className="text-yellow-400" /> Notification Command Center</h2>
-        <p className="text-white/50 text-sm max-w-2xl">Configure global alerts, routing rules, and automated workflow messaging.</p>
+        <p className="text-white/50 text-sm max-w-2xl">Configure automated triggers, global alerts, and workflow messaging across all channels with daily/weekly digests.</p>
       </div>
-      <div className="space-y-6">
-        <div className="bg-[#111] border border-white/5 p-6 rounded-2xl">
-           <h3 className="font-bold mb-4">Notification Channels</h3>
-           <div className="flex gap-4 mb-4">
-             {['Email', 'SMS', 'Push Notifications', 'In-App'].map((c, i) => (
-                <label key={i} className="flex items-center gap-2 text-sm text-white/80"><input type="checkbox" defaultChecked className="accent-yellow-500" /> {c}</label>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-[#111] border border-white/5 p-6 rounded-2xl shadow-xl">
+           <h3 className="font-bold mb-4 text-white/90">Global Channel Routing</h3>
+           <div className="space-y-4">
+             {['Email Notifications', 'SMS Text Alerts', 'In-App Unified Inbox', 'Slack/Discord Webhooks'].map((c, i) => (
+                <label key={i} className="flex items-center justify-between text-sm text-white/80 p-3 bg-black border border-white/5 rounded-xl cursor-pointer hover:border-white/20 transition-all">
+                  <span className="font-bold">{c}</span>
+                  <div className="relative inline-flex items-center">
+                    <input type="checkbox" className="sr-only peer" defaultChecked={i !== 3} />
+                    <div className="w-10 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-yellow-500"></div>
+                  </div>
+                </label>
              ))}
            </div>
         </div>
-        <div className="bg-[#111] border border-white/5 p-6 rounded-2xl">
-           <h3 className="font-bold mb-4">Workflow Automation Builder</h3>
-           <div className="bg-black border border-white/10 p-4 rounded-xl font-mono text-sm">
-              <span className="text-blue-400">if</span> (Revenue &gt; $10,000) {'{\n'}
-              <span className="text-yellow-400">  trigger</span>(Email, SMS, SlackAlert);{'\n}'}
+
+        <div className="bg-[#111] border border-white/5 p-6 rounded-2xl shadow-xl h-full flex flex-col">
+           <h3 className="font-bold mb-4 text-white/90">Management Digest</h3>
+           <p className="text-sm text-white/50 mb-6">Receive a rolled-up summary of organizational activity, revenue milestones, and system alerts to avoid notification fatigue.</p>
+           
+           <div className="flex gap-2 bg-black border border-white/5 p-1 rounded-xl mb-4">
+             {['off', 'daily', 'weekly'].map(d => (
+                <button key={d} onClick={() => setDigest(d)} className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors ${digest === d ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'text-white/50 hover:text-white'}`}>{d}</button>
+             ))}
            </div>
-           <button className="mt-4 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest">+ Add Rule</button>
+           
+           {digest !== 'off' && (
+             <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl mt-auto animate-in fade-in">
+               <Mail className="w-5 h-5 text-yellow-400 mb-2" />
+               <h4 className="font-bold text-yellow-400 text-sm">Digest Active</h4>
+               <p className="text-xs text-yellow-400/70 mt-1">Summary reports will be sent {digest} to all Admins.</p>
+             </div>
+           )}
         </div>
       </div>
+
+      <div className="bg-[#111] border border-white/5 p-6 md:p-8 rounded-2xl shadow-xl">
+         <div className="flex justify-between items-center mb-6">
+           <div>
+             <h3 className="font-bold text-lg text-white/90">Workflow Automation Builder</h3>
+             <p className="text-sm text-white/50">Custom logic blocks for automated event routing.</p>
+           </div>
+           <button onClick={() => setActiveModal('rule')} className="bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded-lg text-sm font-bold shadow-[0_0_15px_rgba(234,179,8,0.4)] transition-all flex items-center gap-2">
+             <Plus className="w-4 h-4"/> Add Rule
+           </button>
+         </div>
+
+         <div className="space-y-4">
+            {/* Rule 1 */}
+            <div className="bg-black border border-white/10 p-5 rounded-xl font-mono text-sm group hover:border-yellow-500/50 transition-colors">
+               <div className="flex justify-between items-start">
+                 <div>
+                    <span className="text-blue-400 font-bold">if</span> (Revenue.Transaction &gt;= <span className="text-green-400 font-bold">$10,000</span>) {'{\n'}
+                    <div className="pl-6 py-2 border-l-2 border-white/5 ml-3 my-2 space-y-1">
+                      <div><span className="text-yellow-400 font-bold">trigger</span>(Email, "Admin Group");</div>
+                      <div><span className="text-yellow-400 font-bold">trigger</span>(SMS, "+1 555-0192");</div>
+                      <div><span className="text-yellow-400 font-bold">trigger</span>(InApp, "High-Value Transaction Alert");</div>
+                    </div>
+                    {'}'}
+                 </div>
+                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <button className="p-1.5 bg-white/5 hover:bg-white/10 rounded border border-white/10"><SettingsIcon className="w-4 h-4 text-white/50"/></button>
+                 </div>
+               </div>
+            </div>
+
+            {/* Rule 2 */}
+            <div className="bg-black border border-white/10 p-5 rounded-xl font-mono text-sm group hover:border-yellow-500/50 transition-colors">
+               <div className="flex justify-between items-start">
+                 <div>
+                    <span className="text-blue-400 font-bold">if</span> (System.Security.MfaFailedAttempts &gt;= <span className="text-red-400 font-bold">5</span>) {'{\n'}
+                    <div className="pl-6 py-2 border-l-2 border-white/5 ml-3 my-2 space-y-1">
+                      <div><span className="text-yellow-400 font-bold">trigger</span>(SMS, "Security Team Lead");</div>
+                      <div><span className="text-pink-400 font-bold">lockdown</span>(User.Account);</div>
+                    </div>
+                    {'}'}
+                 </div>
+                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <button className="p-1.5 bg-white/5 hover:bg-white/10 rounded border border-white/10"><SettingsIcon className="w-4 h-4 text-white/50"/></button>
+                 </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      
+      {activeModal === 'rule' && <NotificationRuleModal onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
 
 function BillingSettings() {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
   return (
-    <div className="p-8 space-y-8 animate-in fade-in">
+    <div className="p-8 space-y-8 animate-in fade-in relative">
       <div>
         <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><CreditCard className="text-green-400" /> Subscription & Enterprise Contracts</h2>
         <p className="text-white/50 text-sm max-w-2xl">Manage your OS operating tier, seat capacity, invoices, and cloud usage quotas.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {['Subscription Management', 'Usage Tracking', 'Invoice Center', 'Payment History', 'Auto Renewal Controls', 'Enterprise Contracts', 'Upgrade Center', 'Downgrade Requests', 'Add-On Marketplace', 'Coupon Management', 'Promotional Campaigns'].map((item, i) => (
-           <div key={i} className="bg-[#111] border border-white/5 p-4 rounded-xl flex items-center gap-3">
+           <div key={i} onClick={() => setActiveModal(item)} className="bg-[#111] border border-white/5 p-4 rounded-xl flex items-center gap-3 hover:bg-white/5 hover:border-white/30 transition-colors cursor-pointer">
              <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center"><CreditCard className="w-4 h-4 text-green-400"/></div>
              <span className="font-bold text-sm tracking-wide">{item}</span>
            </div>
         ))}
       </div>
+      {activeModal && <GenericRedirectModal target={activeModal} onClose={() => setActiveModal(null)} />}
     </div>
   );
 }
 
 function SystemPreferencesSettings() {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
   return (
-    <div className="p-8 space-y-8 animate-in fade-in">
+    <div className="p-8 space-y-8 animate-in fade-in relative">
       <div>
         <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><SettingsIcon className="text-gray-400" /> System Preferences</h2>
         <p className="text-white/50 text-sm max-w-2xl">Layouts, accessibility, operating modes, and global localization.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {['Language Management', 'Timezone Management', 'Regional Settings', 'Accessibility Center', 'Appearance Settings', 'Workspace Layout Builder', 'Dashboard Widget Manager', 'Keyboard Shortcuts', 'Productivity Mode', 'Focus Mode', 'Creator Mode', 'Executive Mode', 'Ministry Mode', 'Broadcaster Mode', 'Distributor Mode'].map((item, i) => (
-           <div key={i} className="bg-[#111] border border-white/5 p-4 rounded-xl flex items-center gap-3 text-white/50 hover:text-white transition-colors cursor-pointer">
+           <div key={i} onClick={() => setActiveModal(item)} className="bg-[#111] border border-white/5 p-4 rounded-xl flex items-center gap-3 text-white/50 hover:text-white hover:border-white/30 transition-colors cursor-pointer">
              <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center"><SettingsIcon className="w-4 h-4"/></div>
              <span className="font-bold text-sm tracking-wide">{item}</span>
            </div>
         ))}
       </div>
+      {activeModal && <GenericRedirectModal target={activeModal} onClose={() => setActiveModal(null)} />}
     </div>
   );
 }

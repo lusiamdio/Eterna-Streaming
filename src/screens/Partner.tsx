@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../lib/store';
+import { supabase } from '../lib/supabase';
 import { 
   ArrowLeft, LayoutDashboard, Film, BarChart3, DollarSign, Users, 
   Settings, UploadCloud, PlayCircle, Clock, Globe, ArrowUpRight, CheckCircle2, XCircle
@@ -267,44 +268,36 @@ function StatusRow({ title, status, type }: any) {
 }
 
 function UploadModal({ onClose }: { onClose: () => void }) {
+  const { publishContent, showToast } = useAppStore();
   const [step, setStep] = useState(1);
   const [hasVideo, setHasVideo] = useState(false);
   const [hasPoster, setHasPoster] = useState(false);
   const [hasTrailer, setHasTrailer] = useState(false);
   
+  const [title, setTitle] = useState('');
+  const [desc, setDesc] = useState('');
+  const [genre, setGenre] = useState('Drama');
+  const [year, setYear] = useState('2024');
+
   const [isScanning, setIsScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [scanResults, setScanResults] = useState<any>(null);
 
   const runAiScan = () => {
     setIsScanning(true);
-    
-    // Simulate AI Scan processing time
     setTimeout(() => {
-      // Generate somewhat random but realistic scores for the criteria
-      // Base score generator that ensures we usually pass but sometimes fail
       const getScore = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-      
-      const isGood = Math.random() > 0.3; // 70% chance of a good overall score
+      const isGood = true; // Make it always pass for demo so we can see it in catalog
       
       const story = getScore(isGood ? 80 : 60, 100);
       const production = getScore(isGood ? 80 : 60, 100);
       const audience = getScore(isGood ? 75 : 55, 95);
       const commercial = getScore(isGood ? 75 : 50, 95);
-      const technical = getScore(isGood ? 90 : 70, 100); // Technical is usually higher
+      const technical = getScore(isGood ? 90 : 70, 100);
       const cultural = getScore(isGood ? 70 : 50, 95);
       const localization = getScore(isGood ? 85 : 40, 100);
       
-      // Calculate weighted total
-      const totalScore = (
-        (story * 0.25) +
-        (production * 0.20) +
-        (audience * 0.15) +
-        (commercial * 0.15) +
-        (technical * 0.10) +
-        (cultural * 0.10) +
-        (localization * 0.05)
-      );
+      const totalScore = ((story * 0.25) + (production * 0.20) + (audience * 0.15) + (commercial * 0.15) + (technical * 0.10) + (cultural * 0.10) + (localization * 0.05));
 
       setScanResults({
         metrics: [
@@ -319,10 +312,9 @@ function UploadModal({ onClose }: { onClose: () => void }) {
         totalScore: Math.round(totalScore),
         passed: totalScore >= 75
       });
-      
       setIsScanning(false);
       setScanComplete(true);
-    }, 4000);
+    }, 2000);
   };
   
   return (
@@ -337,7 +329,6 @@ function UploadModal({ onClose }: { onClose: () => void }) {
         </div>
         
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
-          {/* Progress Indicator */}
           <div className="flex gap-2 mb-8 relative">
             {[1,2,3,4].map(i => (
               <div key={i} className={`h-1.5 flex-1 rounded-full relative overflow-hidden bg-white/10`}>
@@ -351,22 +342,22 @@ function UploadModal({ onClose }: { onClose: () => void }) {
               <h3 className="text-[18px] font-bold mb-4 uppercase tracking-wider text-white">Metadata Entry</h3>
               <div className="space-y-1">
                 <label className="text-[11px] text-white/60 uppercase font-mono tracking-widest font-semibold">Title</label>
-                <input type="text" className="w-full bg-black/50 border border-white/10 p-3 rounded-lg outline-none focus:border-eterna-rose focus:shadow-[0_0_10px_rgba(60,174,255,0.2)] transition-all font-mono text-[14px]" placeholder="Movie or Series title" />
+                <input value={title} onChange={e=>setTitle(e.target.value)} type="text" className="w-full bg-black/50 border border-white/10 p-3 rounded-lg outline-none focus:border-eterna-rose focus:shadow-[0_0_10px_rgba(60,174,255,0.2)] transition-all font-mono text-[14px]" placeholder="Movie or Series title" />
               </div>
               <div className="space-y-1">
                 <label className="text-[11px] text-white/60 uppercase font-mono tracking-widest font-semibold">Description (Synopsis)</label>
-                <textarea rows={4} className="w-full bg-black/50 border border-white/10 p-3 rounded-lg outline-none focus:border-eterna-rose focus:shadow-[0_0_10px_rgba(60,174,255,0.2)] transition-all font-mono text-[14px]" placeholder="Logline or full synopsis..." />
+                <textarea value={desc} onChange={e=>setDesc(e.target.value)} rows={4} className="w-full bg-black/50 border border-white/10 p-3 rounded-lg outline-none focus:border-eterna-rose focus:shadow-[0_0_10px_rgba(60,174,255,0.2)] transition-all font-mono text-[14px]" placeholder="Logline or full synopsis..." />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[11px] text-white/60 uppercase font-mono tracking-widest font-semibold">Genre</label>
-                  <select className="w-full bg-black/50 border border-white/10 p-3 rounded-lg outline-none focus:border-eterna-rose transition-all font-mono text-[14px] text-white/80">
+                  <select value={genre} onChange={e=>setGenre(e.target.value)} className="w-full bg-black/50 border border-white/10 p-3 rounded-lg outline-none focus:border-eterna-rose transition-all font-mono text-[14px] text-white/80">
                     <option>Drama</option><option>Documentary</option><option>Sci-Fi</option><option>Faith</option>
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[11px] text-white/60 uppercase font-mono tracking-widest font-semibold">Release Year</label>
-                  <input type="number" className="w-full bg-black/50 border border-white/10 p-3 rounded-lg outline-none focus:border-eterna-rose transition-all font-mono text-[14px]" placeholder="2024" />
+                  <input value={year} onChange={e=>setYear(e.target.value)} type="number" className="w-full bg-black/50 border border-white/10 p-3 rounded-lg outline-none focus:border-eterna-rose transition-all font-mono text-[14px]" placeholder="2024" />
                 </div>
               </div>
             </div>
@@ -545,8 +536,22 @@ function UploadModal({ onClose }: { onClose: () => void }) {
               <button 
                 className="bg-eterna-violet text-black px-8 py-2.5 rounded-lg font-black uppercase tracking-wider hover:brightness-110 transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(0,214,143,0.4)] hover:scale-105" 
                 onClick={() => {
+                  publishContent({
+                    id: Math.floor(Math.random() * 1000000),
+                    emoji: '🎬',
+                    coverUrl: 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=300&auto=format&fit=crop',
+                    title: title || 'Untitled Production',
+                    sub: 'Partner Content',
+                    tag: 'new',
+                    rating: '8.5',
+                    year: parseInt(year) || 2024,
+                    eps: null,
+                    genres: [genre],
+                    desc: desc || 'A new partner production on Eterna.',
+                    cast: [],
+                    episodes: []
+                  });
                   onClose();
-                  alert("Transmission successful. Content synced to global CDN.");
                 }}
               >
                 <CheckCircle2 className="w-5 h-5" /> Publish to CDN
@@ -560,10 +565,109 @@ function UploadModal({ onClose }: { onClose: () => void }) {
 }
 
 function PartnerOnboarding({ flowStep, setFlowStep, setOnboarded }: any) {
-  const { go, setInfoPage } = useAppStore();
+  const { go, setInfoPage, showToast } = useAppStore();
   const [showLogin, setShowLogin] = React.useState(false);
+  const [email, setEmail] = React.useState('');
+  const [pw, setPw] = React.useState('');
+  
+  // Registration State
+  const [firstName, setFirstName] = React.useState('');
+  const [lastName, setLastName] = React.useState('');
+  const [regEmail, setRegEmail] = React.useState('');
+  const [regPw, setRegPw] = React.useState('');
+  const [regPwConfirm, setRegPwConfirm] = React.useState('');
+  const [termsAgreed, setTermsAgreed] = React.useState(true);
+  
+  const [loading, setLoading] = React.useState(false);
+  const [err, setErr] = React.useState('');
 
-  const handleNext = () => setFlowStep(flowStep + 1);
+  const handleNext = async () => {
+    setErr('');
+    if (flowStep === 2) {
+      if (!firstName || !lastName || !regEmail || !regPw || !regPwConfirm) {
+        setErr('Please fill in all personal information fields.');
+        return;
+      }
+      if (regPw !== regPwConfirm) {
+        setErr('Passwords do not match.');
+        return;
+      }
+      if (regPw.length < 6) {
+        setErr('Password must be at least 6 characters long.');
+        return;
+      }
+      if (!termsAgreed) {
+        setErr('You must agree to the Terms and Conditions.');
+        return;
+      }
+    }
+
+    if (flowStep === 8) {
+      // Final Submit
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: regEmail,
+          password: regPw,
+          options: {
+            data: { full_name: `${firstName} ${lastName}` }
+          }
+        });
+        
+        if (error) throw error;
+        
+        if (data.session) {
+          // Immediately set up profile as pending partner.
+          const { error: profileErr } = await supabase.from('profiles')
+            .update({ role: 'pending_partner' })
+            .eq('id', data.session.user.id);
+            
+          if (profileErr) throw profileErr;
+        }
+
+        showToast('Application Submitted & Pending Approval!');
+        setFlowStep(flowStep + 1);
+      } catch (error: any) {
+        setErr(error.message);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setFlowStep(flowStep + 1);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !pw) {
+      setErr('Please fill in all fields.');
+      return;
+    }
+    setErr('');
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
+      if (error) throw error;
+      
+      let role = 'normal';
+      if (data.session) {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.session.user.id).single();
+        if (profile && profile.role) role = profile.role;
+      }
+
+      if (role !== 'partner' && role !== 'super_admin') {
+        throw new Error('This account does not have Partner privileges.');
+      }
+
+      showToast('Welcome back, Partner!');
+      setOnboarded(true);
+    } catch (error: any) {
+      setErr(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-eterna-bg text-white relative overflow-hidden font-sans">
@@ -597,35 +701,46 @@ function PartnerOnboarding({ flowStep, setFlowStep, setOnboarded }: any) {
             <h2 className="text-3xl font-bold mb-2">Partner Portal Login</h2>
             <p className="text-white/50 mb-8">Sign in to access your creator dashboard.</p>
             
-            <div className="space-y-4 mb-8">
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">Email Address</label>
-                <input 
-                  type="email" 
-                  placeholder="Enter your partner email" 
-                  className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-eterna-gold transition-colors font-mono text-sm placeholder:text-white/20"
-                />
+            <form onSubmit={handleLogin}>
+              <div className="space-y-4 mb-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">Email Address</label>
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    placeholder="Enter your partner email" 
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-eterna-gold transition-colors font-mono text-sm placeholder:text-white/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">Password</label>
+                  <input 
+                    type="password"
+                    value={pw}
+                    onChange={e => setPw(e.target.value)}
+                    required
+                    placeholder="Enter your password" 
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-eterna-gold transition-colors font-mono text-sm placeholder:text-white/20"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">Password</label>
-                <input 
-                  type="password" 
-                  placeholder="Enter your password" 
-                  className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-eterna-gold transition-colors font-mono text-sm placeholder:text-white/20"
-                />
-              </div>
-            </div>
 
-            <button 
-              onClick={() => setOnboarded(true)} 
-              className="w-full bg-eterna-gold hover:bg-eterna-gold/80 text-black py-4 rounded-xl font-bold uppercase tracking-widest text-sm transition-colors shadow-[0_0_20px_rgba(245,176,65,0.3)] hover:shadow-[0_0_30px_rgba(245,176,65,0.5)] mb-6"
-            >
-              Sign In
-            </button>
+              {err && <div className="text-eterna-red text-sm mb-4">{err}</div>}
+
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full bg-eterna-gold hover:bg-eterna-gold/80 disabled:opacity-50 text-black py-4 rounded-xl font-bold uppercase tracking-widest text-sm transition-colors shadow-[0_0_20px_rgba(245,176,65,0.3)] hover:shadow-[0_0_30px_rgba(245,176,65,0.5)] mb-6"
+              >
+                {loading ? 'Authenticating...' : 'Sign In'}
+              </button>
+            </form>
             
             <div className="text-center">
               <button 
-                onClick={() => setShowLogin(false)} 
+                onClick={() => { setShowLogin(false); setErr(''); setEmail(''); setPw(''); }} 
                 className="text-eterna-gold font-bold text-sm underline decoration-white/20 underline-offset-4 hover:decoration-eterna-gold transition-colors"
               >
                 Don't have an account? Sign up
@@ -719,22 +834,24 @@ function PartnerOnboarding({ flowStep, setFlowStep, setOnboarded }: any) {
         {flowStep === 2 && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto">
              <h2 className="text-3xl font-bold mb-2">Create Your Account</h2>
-             <p className="text-white/50 mb-8">Personal Information details</p>
+             <p className="text-white/50 mb-4">Personal Information details</p>
              
+             {err && <div className="text-eterna-red text-sm mb-4">{err}</div>}
+
              <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-[12px] text-white/60 font-semibold mb-1 block">FIRST NAME</label>
-                    <input type="text" className="w-full bg-[#111] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red" />
+                    <input type="text" value={firstName} onChange={e=>setFirstName(e.target.value)} className="w-full bg-[#111] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red" />
                   </div>
                   <div>
                     <label className="text-[12px] text-white/60 font-semibold mb-1 block">LAST NAME</label>
-                    <input type="text" className="w-full bg-[#111] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red" />
+                    <input type="text" value={lastName} onChange={e=>setLastName(e.target.value)} className="w-full bg-[#111] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red" />
                   </div>
                 </div>
                 <div>
                     <label className="text-[12px] text-white/60 font-semibold mb-1 block">EMAIL ADDRESS</label>
-                    <input type="email" className="w-full bg-[#111] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red" />
+                    <input type="email" value={regEmail} onChange={e=>setRegEmail(e.target.value)} className="w-full bg-[#111] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -751,16 +868,16 @@ function PartnerOnboarding({ flowStep, setFlowStep, setOnboarded }: any) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                       <label className="text-[12px] text-white/60 font-semibold mb-1 block">PASSWORD</label>
-                      <input type="password" className="w-full bg-[#111] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red" />
+                      <input type="password" value={regPw} onChange={e=>setRegPw(e.target.value)} className="w-full bg-[#111] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red" />
                   </div>
                   <div>
                       <label className="text-[12px] text-white/60 font-semibold mb-1 block">CONFIRM PASSWORD</label>
-                      <input type="password" className="w-full bg-[#111] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red" />
+                      <input type="password" value={regPwConfirm} onChange={e=>setRegPwConfirm(e.target.value)} className="w-full bg-[#111] border border-white/10 p-3 rounded-md outline-none focus:border-eterna-red" />
                   </div>
                 </div>
                 
                 <div className="flex items-start gap-3 mt-4">
-                  <input type="checkbox" id="terms" className="mt-1" defaultChecked />
+                  <input type="checkbox" id="terms" checked={termsAgreed} onChange={e=>setTermsAgreed(e.target.checked)} className="mt-1" />
                   <label htmlFor="terms" className="text-[14px] text-white/80">I agree to the <span className="text-eterna-red hover:underline cursor-pointer">Partner Terms and Conditions</span></label>
                 </div>
              </div>
@@ -1012,6 +1129,8 @@ function PartnerOnboarding({ flowStep, setFlowStep, setOnboarded }: any) {
              <h2 className="text-3xl font-bold mb-4">AI Review Assistant</h2>
              <p className="text-white/60 mb-8 max-w-md mx-auto">Our automated system is performing a preliminary quality assessment of your submission.</p>
              
+             {err && <div className="text-eterna-red bg-eterna-red/10 p-4 border border-eterna-red/30 rounded-xl max-w-lg mx-auto mb-8 font-bold">{err}</div>}
+
              <div className="bg-[#111] border border-white/10 rounded-xl p-6 text-left max-w-lg mx-auto mb-8">
                <h3 className="font-bold mb-4 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-400"/> Automated Quality Checks</h3>
                <ul className="space-y-3 mb-6 text-[14px]">
@@ -1068,7 +1187,13 @@ function PartnerOnboarding({ flowStep, setFlowStep, setOnboarded }: any) {
         <div className="fixed bottom-0 right-0 p-6 md:p-12 z-50">
            <div className="flex gap-4">
              {flowStep === 8 ? (
-                <button onClick={handleNext} className="bg-eterna-violet text-black font-black px-8 py-3.5 rounded-full uppercase tracking-wider hover:brightness-110 transition shadow-[0_0_20px_rgba(0,214,143,0.4)] hover:-translate-y-1">Submit Application</button>
+                <button 
+                  onClick={handleNext} 
+                  disabled={loading}
+                  className="bg-eterna-violet text-black font-black px-8 py-3.5 rounded-full uppercase tracking-wider hover:brightness-110 transition shadow-[0_0_20px_rgba(0,214,143,0.4)] hover:-translate-y-1 disabled:opacity-50"
+                >
+                  {loading ? 'Submitting...' : 'Submit Application'}
+                </button>
              ) : (
                 <button onClick={handleNext} className="bg-white text-black font-black px-8 py-3.5 rounded-full uppercase tracking-wider hover:bg-gray-200 transition shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:-translate-y-1">Continue</button>
              )}

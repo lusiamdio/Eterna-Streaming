@@ -1,93 +1,373 @@
-import { Play, Tv, MapPin, Film, Download, Users } from "lucide-react";
-import { useAppStore } from "../lib/store";
-import { BottomNav } from "../components/Navigation";
+import React, { useState, useEffect } from 'react';
+import { useAppStore } from '../lib/store';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Play, Search, Globe, ChevronRight, Star, Check, Zap, MapPin, Film, MonitorPlay, Tv, BrainCircuit, Heart, ArrowRight, ShieldCheck, DownloadCloud, PlayCircle, Users
+} from 'lucide-react';
 
 export function LandingScreen() {
-  const { go } = useAppStore();
+  const { go, setInfoPage } = useAppStore();
+  const [scrolled, setScrolled] = useState(false);
+  const [activeTab, setActiveTab] = useState('Movies');
+  const [aiMood, setAiMood] = useState('');
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-eterna-bg">
-      <div className="flex-1 flex flex-col items-center pt-24 text-center p-[32px_24px] relative overflow-y-auto overflow-x-hidden">
-        <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
-          <img src="https://assets.nflxext.com/ffe/siteui/vlv3/a73c4363-1dcd-4719-b3b1-3725418fd91d/fe1147dd-78be-44aa-a0e5-2d2994305a13/IN-en-20231016-popsignuptwoweeks-perspective_alpha_website_small.jpg" className="w-full h-full object-cover" alt="" />
-          <div className="absolute inset-0 bg-black/60 bg-gradient-to-t from-black via-transparent to-black/80" />
-        </div>
-
-        <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-6 z-20">
-          <div className="text-eterna-red font-bold text-4xl tracking-tighter">Eterna</div>
-          <div className="flex gap-4 items-center">
-            <button className="text-white hover:text-white/80 font-medium text-[15px] transition" onClick={() => go('partner')}>Partner</button>
-            <button className="bg-eterna-red text-white px-4 py-1.5 rounded-[4px] font-medium text-[15px] hover:bg-eterna-rose transition" onClick={() => go('auth')}>Sign In</button>
+    <div className="bg-[#050816] min-h-screen text-white font-sans overflow-x-hidden selection:bg-[#00D9FF] selection:text-black">
+      {/* 1. Floating Cinematic Navigation */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#050816]/80 backdrop-blur-xl border-b border-white/5 py-3' : 'bg-transparent py-5'}`}>
+        <div className="max-w-[1600px] mx-auto px-6 md:px-12 flex items-center justify-between">
+          <div className="flex items-center gap-12">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-[#1E90FF] via-[#00D9FF] to-[#6C63FF] cursor-pointer" onClick={() => go('landing')}>ETERNA</h1>
+            <ul className="hidden lg:flex items-center gap-8 text-sm font-medium text-[#A3AED0]">
+            </ul>
+          </div>
+          <div className="flex items-center gap-6">
+            <Search className="w-5 h-5 cursor-pointer text-[#A3AED0] hover:text-white transition-colors" />
+            <button onClick={() => go('partner')} className="text-sm font-medium text-[#A3AED0] hover:text-white transition-colors hidden md:block">Partner Portal</button>
+            <button onClick={() => go('auth')} className="bg-[#1E90FF] hover:bg-[#00D9FF] text-white px-6 py-2.5 rounded-full text-sm font-bold transition-all shadow-[0_0_20px_rgba(30,144,255,0.4)] hover:shadow-[0_0_30px_rgba(0,217,255,0.6)] transform hover:-translate-y-0.5">15 Days Free Trial</button>
           </div>
         </div>
+      </nav>
 
-        <div className="relative z-10 w-full max-w-2xl mt-8">
-          <h1 className="font-sans font-bold text-4xl md:text-5xl lg:text-6xl text-white mb-4 leading-tight">Infinite ShowTime</h1>
-          <p className="text-[20px] text-white mb-6 font-medium">Watch anywhere. Cancel anytime.</p>
-          <p className="text-[18px] text-white mb-4">Ready to watch? Enter your email to create or restart your membership.</p>
-          
-          <div className="flex flex-col sm:flex-row gap-2 max-w-xl mx-auto">
-            <input type="email" placeholder="Email address" className="flex-1 bg-black/40 border border-white/40 text-white p-4 rounded-[4px] focus:outline-none focus:border-white transition-colors" />
-            <button 
-              className="bg-eterna-red text-white px-8 py-4 text-[20px] font-medium rounded-[4px] hover:bg-eterna-rose transition flex items-center justify-center gap-2 shrink-0"
-              onClick={() => go('auth')}
-            >
-              Get Started <span className="text-[24px]">›</span>
-            </button>
-          </div>
-        </div>
+      {/* 2. Hero Experience */}
+      <section className="relative min-h-[100vh] flex items-center pt-20 overflow-hidden">
+         {/* Background Effects */}
+         <div className="absolute inset-0 z-0">
+            <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#6C63FF]/20 rounded-full blur-[120px] opacity-60 mix-blend-screen mix-blend-lighten animate-pulse" style={{ animationDuration: '8s' }}></div>
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[#1E90FF]/20 rounded-full blur-[100px] opacity-50 mix-blend-screen" style={{ animationDuration: '12s' }}></div>
+            <div className="absolute top-1/2 left-1/2 w-[100vw] h-[100vh] -translate-x-1/2 -translate-y-1/2 bg-[url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1920&auto=format&fit=crop')] bg-cover bg-center opacity-10 blur-sm pointer-events-none mix-blend-luminosity"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[#050816] via-[#050816]/90 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050816] via-transparent to-transparent"></div>
+         </div>
 
-        {/* Trending Now Section */}
-        <div className="relative z-10 w-full max-w-7xl mt-16 mx-auto text-left">
-          <h2 className="text-2xl font-bold text-white mb-6 px-4">Trending Now: African & Hollywood Hits</h2>
-          <div className="grid grid-rows-2 grid-flow-col gap-4 px-4 pb-8 overflow-x-auto hide-scrollbar snap-x">
-            {[
-              { title: "The Black Book", url: "https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=300&auto=format&fit=crop" },
-              { title: "Dune: Part Two", url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=300&auto=format&fit=crop" },
-              { title: "Anikulapo", url: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=300&auto=format&fit=crop" },
-              { title: "Oppenheimer", url: "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=300&auto=format&fit=crop" },
-              { title: "Gangs of Lagos", url: "https://images.unsplash.com/photo-1560109947-543149eceb16?q=80&w=300&auto=format&fit=crop" },
-              { title: "Avatar: The Way of Water", url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=300&auto=format&fit=crop" },
-              { title: "A Tribe Called Judah", url: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?q=80&w=300&auto=format&fit=crop" },
-              { title: "The Batman", url: "https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?q=80&w=300&auto=format&fit=crop" },
-              { title: "Battle on Buka Street", url: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=300&auto=format&fit=crop" },
-              { title: "Joker", url: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=300&auto=format&fit=crop" },
-              { title: "Jagun Jagun", url: "https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?q=80&w=300&auto=format&fit=crop" },
-              { title: "Top Gun: Maverick", url: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=300&auto=format&fit=crop" },
-              { title: "King of Boys", url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=300&auto=format&fit=crop" },
-              { title: "Inception", url: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=300&auto=format&fit=crop" },
-              { title: "Sista", url: "https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=300&auto=format&fit=crop" },
-            ].map((film, idx) => (
-              <div 
-                key={idx} 
-                className="relative w-[140px] md:w-[180px] shrink-0 aspect-[2/3] rounded-md overflow-hidden cursor-pointer hover:scale-105 transition-transform border border-white/10 snap-start"
-                onClick={() => go('auth')}
-              >
-                <img 
-                  src={film.url} 
-                  alt={film.title} 
-                  className="w-full h-full object-cover bg-black/50" 
-                  onError={(e) => { e.currentTarget.src = `https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=300&auto=format&fit=crop`; }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-3">
-                  <span className="text-white font-bold text-[13px] leading-tight drop-shadow-md">{film.title}</span>
-                </div>
+         <div className="max-w-[1600px] mx-auto px-6 md:px-12 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
+            {/* Left Side */}
+            <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} className="max-w-2xl">
+               <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tighter mb-6 leading-[1.1]">
+                 Infinite Stories.<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1E90FF] to-[#00D9FF]">One Universe.</span>
+               </h1>
+               <p className="text-xl md:text-2xl text-[#A3AED0] mb-8 font-light max-w-lg leading-relaxed">
+                 Stream the world's most captivating movies, series, originals, and live experiences.
+               </p>
+               
+               <div className="flex flex-col sm:flex-row gap-4 mb-10 relative z-20">
+                 <div className="relative flex-1 max-w-md group">
+                   <input type="email" placeholder="Enter your email" className="w-full bg-[#0D1324]/80 backdrop-blur border border-white/10 text-white px-6 py-4 rounded-full outline-none focus:border-[#1E90FF] transition-colors shadow-inner" />
+                   <div className="absolute inset-0 rounded-full border border-[#00D9FF] opacity-0 group-hover:opacity-30 transition-opacity blur-[2px] pointer-events-none"></div>
+                 </div>
+                 <button onClick={() => go('auth')} className="bg-gradient-to-r from-[#1E90FF] to-[#6C63FF] text-white px-8 py-4 rounded-full font-bold flex items-center justify-center gap-2 hover:scale-105 transition-transform shadow-[0_0_30px_rgba(108,99,255,0.4)] whitespace-nowrap">
+                   Start Watching Free <ChevronRight className="w-5 h-5" />
+                 </button>
+               </div>
+
+               <div className="flex flex-wrap items-center gap-6 text-[#A3AED0] text-sm font-medium">
+                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#00D9FF]" /> Cancel Anytime</div>
+                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#00D9FF]" /> No Contracts</div>
+                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#00D9FF]" /> Watch Anywhere</div>
+               </div>
+            </motion.div>
+
+            {/* Right Side: 3D Floating Movie Cards */}
+            <div className="relative h-[600px] hidden lg:block perspective-1000">
+               <motion.div 
+                 initial={{ opacity: 0, rotateY: 20, rotateX: 10, scale: 0.8 }} 
+                 animate={{ opacity: 1, rotateY: 0, rotateX: 0, scale: 1 }} 
+                 transition={{ duration: 1.2, ease: "easeOut" }}
+                 className="absolute inset-0 w-full h-full transform-style-preserve-3d"
+               >
+                  <div className="absolute top-[10%] left-[10%] w-[250px] aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 transform -rotate-12 translate-z-10 hover:translate-y-[-10px] hover:border-[#1E90FF] transition-all duration-500 z-10 group">
+                    <img src="https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=400&auto=format&fit=crop" className="w-full h-full object-cover" alt="Anikulapo" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm"><PlayCircle className="w-12 h-12 text-[#00D9FF]" /></div>
+                  </div>
+                  <div className="absolute top-[40%] right-[5%] w-[220px] aspect-[2/3] rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 transform rotate-6 translate-z-20 hover:translate-y-[-10px] hover:border-[#6C63FF] transition-all duration-500 z-20 group">
+                    <img src="https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=400&auto=format&fit=crop" className="w-full h-full object-cover" alt="The Black Book" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm"><PlayCircle className="w-12 h-12 text-[#00D9FF]" /></div>
+                  </div>
+                  <div className="absolute top-[25%] left-[50%] -translate-x-1/2 w-[320px] aspect-[2/3] rounded-3xl overflow-hidden shadow-[0_30px_60px_rgba(30,144,255,0.3)] border border-[#1E90FF]/50 transform translate-z-50 hover:scale-105 hover:shadow-[0_0_80px_rgba(30,144,255,0.6)] transition-all duration-500 z-30 group cursor-pointer">
+                    <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=600&auto=format&fit=crop" className="w-full h-full object-cover" alt="Dune" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm bg-black/30">
+                       <div className="w-20 h-20 rounded-full bg-[#1E90FF]/80 flex items-center justify-center shadow-[0_0_30px_#1E90FF] backdrop-blur-md">
+                          <Play className="w-8 h-8 text-white ml-2" />
+                       </div>
+                    </div>
+                  </div>
+               </motion.div>
+            </div>
+         </div>
+      </section>
+
+      {/* 3. Trending Now */}
+      <section className="py-24 relative z-10">
+        <div className="max-w-[1600px] mx-auto px-6 md:px-12">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-10">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Trending Across Africa & The World</h2>
+              <div className="flex gap-4">
+                 {['Movies', 'Series', 'Originals', 'Live Events'].map(tab => (
+                   <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === tab ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.4)]' : 'bg-[#111827] text-[#A3AED0] hover:text-white border border-white/5'}`}>
+                     {tab}
+                   </button>
+                 ))}
               </div>
+            </div>
+          </div>
+
+          <div className="flex gap-6 overflow-x-auto pb-8 hide-scrollbar snap-x snap-mandatory pr-12">
+            {[
+              { id: 1, title: 'Echoes of Sahara', genre: 'African Cinema • Drama', duration: '2h 15m', rating: '98%', img: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=400&fit=crop' },
+              { id: 2, title: 'Neon Nights', genre: 'Sci-Fi • Thriller', duration: '1h 50m', rating: '95%', img: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=400&fit=crop' },
+              { id: 3, title: 'Lagos Hustle', genre: 'Action • Crime', duration: '2h 05m', rating: '92%', img: 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=400&fit=crop' },
+              { id: 4, title: 'The Silent Code', genre: 'Spy • Mystery', duration: '1h 45m', rating: '89%', img: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=400&fit=crop' },
+              { id: 5, title: 'Spirit Walkers', genre: 'Documentary', duration: '1h 30m', rating: '99%', img: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=400&fit=crop' },
+            ].map(movie => (
+               <div key={movie.id} className="relative w-[280px] shrink-0 aspect-[2/3] rounded-2xl overflow-hidden snap-start group cursor-pointer border border-white/5">
+                 <img src={movie.img} alt={movie.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                 <div className="absolute inset-0 bg-gradient-to-t from-[#050816] via-[#050816]/50 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                 <div className="absolute inset-0 p-6 flex flex-col justify-end translate-y-8 group-hover:translate-y-0 transition-transform duration-300">
+                    <div className="w-12 h-12 bg-[#1E90FF] rounded-full flex items-center justify-center shadow-[0_0_20px_#1E90FF] mb-auto self-center opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all duration-300">
+                       <Play className="w-5 h-5 text-white ml-1" />
+                    </div>
+                    <div className="flex items-center gap-2 text-[#00D9FF] font-bold text-xs mb-2">
+                       <Star className="w-3 h-3 fill-current" /> {movie.rating} Match
+                    </div>
+                    <h3 className="font-bold text-xl leading-tight mb-1">{movie.title}</h3>
+                    <p className="text-[#A3AED0] text-xs font-medium">{movie.genre} • {movie.duration}</p>
+                 </div>
+               </div>
             ))}
           </div>
         </div>
-      </div>
-      <BottomNav />
-    </div>
-  );
-}
+      </section>
 
-// Quick fallback for radio
-function RadioIcon(props: any) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={props.size} height={props.size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <circle cx="12" cy="12" r="2"></circle>
-      <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48 0a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path>
-    </svg>
+      {/* 4. AI Discovery Engine */}
+      <section className="py-24 relative overflow-hidden bg-[#0D1324] border-y border-white/5">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-5xl bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#00D9FF]/10 via-transparent to-transparent pointer-events-none"></div>
+        <div className="max-w-[1240px] mx-auto px-6 md:px-12 relative z-10 text-center">
+           <BrainCircuit className="w-16 h-16 text-[#00D9FF] mx-auto mb-6 drop-shadow-[0_0_15px_rgba(0,217,255,0.5)]" />
+           <h2 className="text-4xl md:text-5xl font-bold mb-4">Find Your Next Obsession</h2>
+           <p className="text-[#A3AED0] text-lg mb-12 max-w-2xl mx-auto">Our AI analyzes your preferences and neural viewing patterns to recommend content you'll genuinely love.</p>
+           
+           <div className="max-w-2xl mx-auto bg-[#111827] border border-white/10 rounded-2xl p-8 shadow-2xl relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#1E90FF]/10 to-[#6C63FF]/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <h3 className="font-bold text-xl mb-6 relative z-10">What are you in the mood for?</h3>
+              <div className="flex flex-wrap justify-center gap-3 relative z-10">
+                 {['Mind-Bending Action', 'Heartwarming Romance', 'Authentic African Cinema', 'Deep Space Sci-Fi', 'Spiritual Journey', 'Dark Comedy'].map(mood => (
+                    <button key={mood} onClick={() => setAiMood(mood)} className={`px-5 py-3 rounded-xl text-sm font-bold transition-all border ${aiMood === mood ? 'bg-[#1E90FF] border-[#1E90FF] text-white shadow-[0_0_20px_rgba(30,144,255,0.4)] scale-105' : 'bg-[#050816] border-white/10 text-[#A3AED0] hover:border-[#00D9FF]/50 hover:text-white'}`}>
+                      {mood}
+                    </button>
+                 ))}
+              </div>
+              <AnimatePresence>
+                {aiMood && (
+                   <motion.div initial={{ opacity: 0, height: 0, marginTop: 0 }} animate={{ opacity: 1, height: 'auto', marginTop: 32 }} exit={{ opacity: 0, height: 0, marginTop: 0 }} className="p-6 bg-[#050816] rounded-xl border border-white/5 text-left flex gap-6 items-center">
+                      <div className="w-20 h-28 bg-[#111827] rounded-lg shrink-0 overflow-hidden border border-white/10 relative">
+                        <img src="https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=200&fit=crop" className="w-full h-full object-cover" alt="" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40"><Search className="w-6 h-6 text-[#00D9FF] animate-pulse" /></div>
+                      </div>
+                      <div>
+                         <div className="text-[10px] uppercase tracking-widest text-[#00D9FF] font-bold mb-1">AI Match Found — 99.4%</div>
+                         <h4 className="font-bold text-xl mb-2">The AI generated recommendation based on "{aiMood}"</h4>
+                         <p className="text-sm text-[#A3AED0]">A perfect blend of your selected mood, localized for your region with impeccable storytelling.</p>
+                      </div>
+                   </motion.div>
+                )}
+              </AnimatePresence>
+           </div>
+        </div>
+      </section>
+
+      {/* 5. Eterna Originals */}
+      <section className="py-0 relative">
+        <div className="w-full h-[70vh] min-h-[500px] relative overflow-hidden group">
+           <img src="https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=1920&fit=crop" className="w-full h-full object-cover transform transition-transform duration-1000 group-hover:scale-105" alt="Eterna Originals" />
+           <div className="absolute inset-0 bg-gradient-to-r from-[#050816] via-[#050816]/70 to-transparent"></div>
+           <div className="absolute inset-0 flex items-center max-w-[1600px] mx-auto px-6 md:px-12 pt-20">
+              <div className="max-w-xl">
+                 <div className="text-[#00D9FF] font-black tracking-widest uppercase text-sm mb-4">Exclusive</div>
+                 <h2 className="text-5xl md:text-7xl font-bold tracking-tighter mb-4">Eterna <span className="text-white ring-1 ring-white/20 px-4 py-1 rounded bg-white/5 backdrop-blur-sm">Originals</span></h2>
+                 <p className="text-xl text-white/80 mb-8 font-light">Stories produced exclusively for Eterna. World-class production. Visionary directors. Unforgettable narratives.</p>
+                 <div className="flex gap-4">
+                   <button className="bg-white text-black px-8 py-3 rounded-full font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors"><Play className="w-5 h-5 fill-current" /> Play Trailer</button>
+                   <button className="bg-black/50 backdrop-blur border border-white/20 text-white px-8 py-3 rounded-full font-bold hover:bg-white/10 transition-colors">More Info</button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </section>
+
+      {/* 6. Why Eterna Grid */}
+      <section className="py-24 max-w-[1600px] mx-auto px-6 md:px-12">
+        <h2 className="text-4xl font-bold text-center mb-16">The Premier Experience</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           {[
+             { icon: MonitorPlay, title: "4K Ultra HD & HDR", desc: "Crystal clear picture quality with Dolby Atmos spatial audio for cinematic immersion." },
+             { icon: DownloadCloud, title: "Download Offline", desc: "Save your data. Download securely to your device and watch anywhere, anytime." },
+             { icon: Users, title: "Multiple Profiles", desc: "Create up to 5 profiles for the whole family, each with personalized recommendations." },
+             { icon: ShieldCheck, title: "Parental Controls", desc: "Safe, PIN-protected profiles with content rating limits for kids." },
+             { icon: BrainCircuit, title: "AI Recommendations", desc: "Our proprietary engine learns what you love to serve the perfect next watch." },
+             { icon: Tv, title: "Live Streaming", desc: "Watch live sports, global news, and exclusive interactive events in real-time." }
+           ].map((feat, i) => (
+             <div key={i} className="bg-[#111827] border border-white/5 p-8 rounded-2xl hover:bg-[#111827]/80 hover:border-[#1E90FF]/50 transition-all hover:-translate-y-1 group">
+               <div className="w-14 h-14 rounded-full bg-[#1E90FF]/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform group-hover:bg-[#1E90FF]/20 group-hover:shadow-[0_0_20px_rgba(30,144,255,0.2)]">
+                 <feat.icon className="w-6 h-6 text-[#1E90FF]" />
+               </div>
+               <h3 className="text-xl font-bold mb-3">{feat.title}</h3>
+               <p className="text-[#A3AED0] leading-relaxed">{feat.desc}</p>
+             </div>
+           ))}
+        </div>
+      </section>
+
+      {/* 7. Social Proof & Map */}
+      <section className="py-24 bg-[#0D1324] border-y border-white/5 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg')] bg-no-repeat bg-center opacity-5 grayscale invert pt-20"></div>
+        <div className="max-w-[1600px] mx-auto px-6 md:px-12 relative z-10">
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center">
+             <div><div className="text-4xl md:text-5xl font-black bg-clip-text text-transparent bg-gradient-to-br from-white to-[#A3AED0] mb-2">100M+</div><div className="text-[#1E90FF] font-bold tracking-wider uppercase text-sm">Streams Generated</div></div>
+             <div><div className="text-4xl md:text-5xl font-black bg-clip-text text-transparent bg-gradient-to-br from-white to-[#A3AED0] mb-2">50+</div><div className="text-[#1E90FF] font-bold tracking-wider uppercase text-sm">Countries Active</div></div>
+             <div><div className="text-4xl md:text-5xl font-black bg-clip-text text-transparent bg-gradient-to-br from-white to-[#A3AED0] mb-2">10K+</div><div className="text-[#1E90FF] font-bold tracking-wider uppercase text-sm">Titles in Library</div></div>
+             <div><div className="text-4xl md:text-5xl font-black bg-clip-text text-transparent bg-gradient-to-br from-white to-[#A3AED0] mb-2">5M+</div><div className="text-[#1E90FF] font-bold tracking-wider uppercase text-sm">Global Subscribers</div></div>
+           </div>
+        </div>
+      </section>
+
+      {/* 9. Testimonials */}
+      <section className="py-24 max-w-[1600px] mx-auto px-6 md:px-12 relative overflow-hidden">
+        <h2 className="text-4xl font-bold text-center mb-16">Stories That Move You</h2>
+        <div className="flex gap-6 overflow-x-auto pb-8 hide-scrollbar snap-x snap-mandatory">
+          {[
+            { name: "Sarah K.", country: "South Africa", review: "The collection of African cinema is unparalleled. The AI recommendations somehow always know my mood.", img: "https://images.unsplash.com/photo-1531123897727-8f129e1b28ce?q=80&w=200&fit=crop" },
+            { name: "David L.", country: "United Kingdom", review: "Worth every penny for the 4K Ultra HD quality alone. Eterna Originals are beating Hollywood right now.", img: "https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=200&fit=crop" },
+            { name: "Amara J.", country: "Nigeria", review: "The cinematic interface is gorgeous, but the content library is the real star. Cancelled my other subs.", img: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=200&fit=crop" },
+            { name: "Michael R.", country: "USA", review: "Finally, a streaming platform that gives equal weight to global cinema. The Live TV feature is a gamechanger.", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=200&fit=crop" }
+          ].map((item, i) => (
+            <div key={i} className="min-w-[320px] md:min-w-[400px] bg-[#111827] border border-white/5 rounded-2xl p-8 snap-center hover:border-white/20 transition-colors">
+               <div className="flex text-[#00D9FF] mb-6">
+                 {[...Array(5)].map((_, j) => <Star key={j} className="w-5 h-5 fill-current" />)}
+               </div>
+               <p className="text-lg text-white mb-8 border-l-2 border-[#1E90FF] pl-4 italic">"{item.review}"</p>
+               <div className="flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-white/10"><img src={item.img} className="w-full h-full object-cover" alt="" /></div>
+                 <div>
+                   <div className="font-bold">{item.name}</div>
+                   <div className="text-sm text-[#A3AED0]">{item.country}</div>
+                 </div>
+               </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 10. Pricing */}
+      <section className="py-24 max-w-[1240px] mx-auto px-6 md:px-12">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4">Choose Your Universe</h2>
+          <p className="text-[#A3AED0] text-lg">No contracts. No hidden fees. Cancel anytime.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+           {/* Starter */}
+           <div className="bg-[#111827] border border-white/5 rounded-3xl p-8">
+             <h3 className="font-bold text-xl text-[#A3AED0] mb-2">Starter</h3>
+             <div className="text-4xl font-bold mb-6">$4.99<span className="text-lg text-[#A3AED0] font-normal">/mo</span></div>
+             <ul className="space-y-4 mb-8">
+               <li className="flex items-center gap-3 text-sm"><Check className="w-5 h-5 text-[#6C63FF]" /> HD Video Quality</li>
+               <li className="flex items-center gap-3 text-sm"><Check className="w-5 h-5 text-[#6C63FF]" /> 1 Profile</li>
+               <li className="flex items-center gap-3 text-sm text-[#A3AED0] line-through"><Check className="w-5 h-5 text-transparent" /> Downloads</li>
+             </ul>
+             <button onClick={() => go('auth')} className="w-full py-3 rounded-full border border-white/20 font-bold hover:bg-white/5 transition-colors">15 Days Free Trial</button>
+           </div>
+           
+           {/* Premium */}
+           <div className="bg-[#050816] border-2 border-[#1E90FF] rounded-3xl p-10 relative transform md:-translate-y-4 shadow-[0_0_40px_rgba(30,144,255,0.2)]">
+             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#1E90FF] to-[#00D9FF] text-black font-bold uppercase tracking-widest text-[10px] px-4 py-1.5 rounded-full">Most Popular</div>
+             <h3 className="font-bold text-xl text-white mb-2">Premium</h3>
+             <div className="text-5xl font-bold mb-6">$9.99<span className="text-lg text-[#A3AED0] font-normal">/mo</span></div>
+             <ul className="space-y-4 mb-8">
+               <li className="flex items-center gap-3 text-sm font-medium"><Check className="w-5 h-5 text-[#00D9FF]" /> 4K Ultra HD + HDR</li>
+               <li className="flex items-center gap-3 text-sm font-medium"><Check className="w-5 h-5 text-[#00D9FF]" /> 3 Profiles</li>
+               <li className="flex items-center gap-3 text-sm font-medium"><Check className="w-5 h-5 text-[#00D9FF]" /> Offline Downloads</li>
+               <li className="flex items-center gap-3 text-sm font-medium"><Check className="w-5 h-5 text-[#00D9FF]" /> AI Smart Recs</li>
+             </ul>
+             <button onClick={() => go('auth')} className="w-full py-4 rounded-full bg-[#1E90FF] hover:bg-[#00D9FF] text-white font-bold transition-colors shadow-[0_0_20px_rgba(30,144,255,0.4)] hover:shadow-[0_0_30px_rgba(0,217,255,0.6)]">15 Days Free Trial</button>
+           </div>
+
+           {/* Family */}
+           <div className="bg-[#111827] border border-white/5 rounded-3xl p-8">
+             <h3 className="font-bold text-xl text-[#A3AED0] mb-2">Family</h3>
+             <div className="text-4xl font-bold mb-6">$14.99<span className="text-lg text-[#A3AED0] font-normal">/mo</span></div>
+             <ul className="space-y-4 mb-8">
+               <li className="flex items-center gap-3 text-sm"><Check className="w-5 h-5 text-[#6C63FF]" /> 4K Ultra HD + HDR</li>
+               <li className="flex items-center gap-3 text-sm"><Check className="w-5 h-5 text-[#6C63FF]" /> 5 Profiles + Kids</li>
+               <li className="flex items-center gap-3 text-sm"><Check className="w-5 h-5 text-[#6C63FF]" /> Unlimited Downloads</li>
+             </ul>
+             <button onClick={() => go('auth')} className="w-full py-3 rounded-full border border-white/20 font-bold hover:bg-white/5 transition-colors">15 Days Free Trial</button>
+           </div>
+        </div>
+      </section>
+
+      {/* 11. Final CTA */}
+      <section className="py-32 relative overflow-hidden text-center border-t border-white/5">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=1920&fit=crop')] opacity-10 bg-cover bg-center"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#050816] to-[#050816]/70"></div>
+        <div className="relative z-10 max-w-4xl mx-auto px-6">
+           <h2 className="text-5xl md:text-7xl font-bold mb-6 tracking-tighter">Your Next Favorite <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1E90FF] to-[#6C63FF]">Story Awaits.</span></h2>
+           <p className="text-xl md:text-2xl text-[#A3AED0] mb-10 max-w-2xl mx-auto">Join millions discovering world-class entertainment without limits.</p>
+           <div className="flex flex-col sm:flex-row justify-center gap-4">
+             <button onClick={() => go('auth')} className="bg-white text-black px-10 py-5 rounded-full font-bold text-lg hover:bg-gray-200 transition-colors shadow-[0_0_30px_rgba(255,255,255,0.3)]">15 Days Free Trial</button>
+             <button onClick={() => go('dashboard')} className="bg-black/80 backdrop-blur border border-white/20 text-white px-10 py-5 rounded-full font-bold text-lg hover:bg-white/10 transition-colors">Browse Content</button>
+           </div>
+        </div>
+      </section>
+
+      {/* 12. Footer */}
+      <footer className="bg-[#050816] py-12 md:py-16 border-t border-white/10 text-[#A3AED0]">
+        <div className="max-w-[1240px] mx-auto px-6 md:px-12">
+           <p className="mb-8"><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Contact Us'); go('info'); }} className="hover:underline cursor-pointer">Questions? Contact us.</a></p>
+           
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mb-8 text-sm">
+             <ul className="space-y-4">
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Help Center'); go('info'); }} className="hover:underline">Help Center</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Account'); go('info'); }} className="hover:underline">Account</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Media Center'); go('info'); }} className="hover:underline">Media Center</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Investor Relations'); go('info'); }} className="hover:underline">Investor Relations</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Jobs'); go('info'); }} className="hover:underline">Jobs</a></li>
+             </ul>
+             <ul className="space-y-4">
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Redeem Gift Cards'); go('info'); }} className="hover:underline">Redeem Gift Cards</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Buy Gift Cards'); go('info'); }} className="hover:underline">Buy Gift Cards</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Ways to Watch'); go('info'); }} className="hover:underline">Ways to Watch</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Pricing Plans'); go('info'); }} className="hover:underline">Pricing Plans</a></li>
+             </ul>
+             <ul className="space-y-4">
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Terms of Use'); go('info'); }} className="hover:underline">Terms of Use</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Privacy'); go('info'); }} className="hover:underline">Privacy</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Cookie Preferences'); go('info'); }} className="hover:underline">Cookie Preferences</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Corporate Information'); go('info'); }} className="hover:underline">Corporate Information</a></li>
+             </ul>
+             <ul className="space-y-4">
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Contact Us'); go('info'); }} className="hover:underline">Contact Us</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Speed Test'); go('info'); }} className="hover:underline">Speed Test</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Legal Notices'); go('info'); }} className="hover:underline">Legal Notices</a></li>
+               <li><a href="#" onClick={(e) => { e.preventDefault(); setInfoPage('Service Code'); go('info'); }} className="hover:underline border border-[#A3AED0] px-2 py-1 mt-2 inline-block hover:text-white hover:border-white transition-colors">Service Code</a></li>
+             </ul>
+           </div>
+           
+           <button className="text-sm px-4 py-2 border border-[#A3AED0] text-[#A3AED0] hover:text-white hover:border-white transition-colors mb-6 flex items-center gap-2 rounded">
+             <Globe className="w-4 h-4" /> English
+           </button>
+           
+           <p className="text-sm">© 2026 Eterna, Inc.</p>
+        </div>
+      </footer>
+    </div>
   );
 }

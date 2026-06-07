@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
-import { Sparkles, Brain, Clock, Target, Compass, Send } from "lucide-react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Sparkles, Brain, Clock, Target, Compass, Send, Mic } from "lucide-react";
+import { motion } from "motion/react";
 import { useAppStore } from "../lib/store";
 import { TopNav, BottomNav } from "../components/Navigation";
-import { CATALOG } from "../lib/data";
 import { ContentCard } from "../components/Cards";
 
 const MOODS = ['Inspired', 'Curious', 'Adventurous', 'Spiritual', 'Romantic', 'Motivated', 'Family Time', 'Educational', 'Thrilled', 'Relaxed'];
@@ -10,22 +10,56 @@ const GOALS = ['Leadership', 'Entrepreneurship', 'Marriage', 'Parenting', 'Faith
 const TIMES = ['15 min', '30 min', '60 min', '90 min', '2 Hours', 'Weekend Marathon'];
 
 export function DiscoveryHub({ title = "Intent-Based Discovery", isOriginals = false, isSeries = false, forceGenre }: { title?: string, isOriginals?: boolean, isSeries?: boolean, forceGenre?: string }) {
-  const { setContent, go } = useAppStore();
+  const { setContent, go, catalog } = useAppStore();
   const [prompt, setPrompt] = useState("");
   const [activeMood, setActiveMood] = useState("");
   const [activeGoal, setActiveGoal] = useState("");
   const [activeTime, setActiveTime] = useState("");
   const [aiTyping, setAiTyping] = useState(false);
   const [aiResponse, setAiResponse] = useState("");
+  const [isListening, setIsListening] = useState(false);
+
+  const handleVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice search is not supported in this browser.");
+      return;
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setPrompt(transcript);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
 
   const filtered = useMemo(() => {
-    let res = [...CATALOG, ...CATALOG.slice(0, 5).map(c => ({...c, id: c.id + 100})), ...CATALOG.map(c => ({...c, id: c.id + 200}))]; // Expand catalog slightly to over 20 items
+    let res = [...catalog, ...catalog.slice(0, 5).map(c => ({...c, id: c.id + 100})), ...catalog.map(c => ({...c, id: c.id + 200}))]; // Expand catalog slightly to over 20 items
     
     if (forceGenre) {
        res = res.filter(c => c.genres && c.genres.includes(forceGenre));
        // If empty due to mock data, just fake it by renaming genres of some items or creating dynamic items
        if (res.length === 0) {
-         res = CATALOG.slice(0, 4).map((c, i) => ({ ...c, id: c.id + 1000 + i, title: `${forceGenre}: ${c.title}`, genres: [forceGenre] }));
+         res = catalog.slice(0, 4).map((c, i) => ({ ...c, id: c.id + 1000 + i, title: `${forceGenre}: ${c.title}`, genres: [forceGenre] }));
        }
     }
 
@@ -64,8 +98,8 @@ export function DiscoveryHub({ title = "Intent-Based Discovery", isOriginals = f
        res = res.sort(() => 0.5 - Math.random()).slice(0, 6); // Randomize for AI response
     }
 
-    return res.length > 0 ? res : CATALOG.slice(0, 6); // Fallback
-  }, [activeMood, activeGoal, activeTime, aiResponse, isOriginals, isSeries]);
+    return res.length > 0 ? res : catalog.slice(0, 6); // Fallback
+  }, [activeMood, activeGoal, activeTime, aiResponse, isOriginals, isSeries, catalog]);
 
   const handleAiSearch = () => {
     if (!prompt) return;
@@ -100,6 +134,9 @@ Recommended carefully curated selections for you.`);
         <div className="w-full max-w-3xl mx-auto mb-16">
           <div className="text-[13px] font-bold text-white/50 mb-3 uppercase tracking-wider pl-4">What would you like to experience today?</div>
           <div className="flex items-center gap-3 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full p-2 pl-6 shadow-2xl focus-within:border-eterna-rose/50 focus-within:shadow-[0_0_30px_rgba(225,29,72,0.2)] transition-all">
+            <button onClick={handleVoiceSearch} className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${isListening ? 'bg-eterna-rose text-white animate-pulse' : 'bg-white/10 text-white/50 hover:bg-white/20 hover:text-white'}`}>
+              <Mic className="w-5 h-5" />
+            </button>
             <input 
               type="text" 
               value={prompt}
@@ -248,10 +285,17 @@ Recommended carefully curated selections for you.`);
            </div>
            
            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-            {filtered.map(c => (
-              <div key={c.id} className="w-full">
+            {filtered.map((c, i) => (
+              <motion.div 
+                key={c.id} 
+                className="w-full"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: i % 10 * 0.05 }}
+              >
                 <ContentCard content={c} />
-              </div>
+              </motion.div>
             ))}
            </div>
         </div>

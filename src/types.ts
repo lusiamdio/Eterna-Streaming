@@ -14,7 +14,7 @@ export interface Episode {
 }
 
 export interface Content {
-  id: number;
+  id: number | string;
   emoji: string;
   coverUrl?: string;
   title: string;

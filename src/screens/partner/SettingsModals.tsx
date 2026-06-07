@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building, Users, DollarSign, Shield, Unplug, 
-  CheckCircle2, AlertCircle, X, Download, ShieldCheck, Mail, Key, Globe, UploadCloud, Smartphone, Laptop
+  CheckCircle2, AlertCircle, X, Download, ShieldCheck, Mail, Key, Globe, UploadCloud, Smartphone, Laptop,
+  Sparkles, FileText, Palette, Activity, Bell, Settings as SettingsIcon, Plus
 } from 'lucide-react';
 
 export function WorkflowModal({ title, icon, onClose, children }: { title: string, icon: React.ReactNode, onClose: () => void, children: React.ReactNode }) {
@@ -23,53 +24,91 @@ export function WorkflowModal({ title, icon, onClose, children }: { title: strin
 // 1. Organization Verification
 export function OrgVerificationModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   
   useEffect(() => {
-    if (step > 0 && step < 4) {
-      const timer = setTimeout(() => setStep(s => s + 1), 1500);
+    if (submitting && step > 0 && step < 5) {
+      const timer = setTimeout(() => setStep(s => s + 1), 2000);
       return () => clearTimeout(timer);
     }
-  }, [step]);
+  }, [step, submitting]);
+
+  const handleStart = () => {
+    setSubmitting(true);
+    setStep(1);
+  };
 
   return (
     <WorkflowModal title="Organization Verification Center" icon={<Building className="text-eterna-rose" />} onClose={onClose}>
       {step === 0 && (
         <div className="space-y-6">
-          <p className="text-sm text-white/70">Upload your legal entities for artificial intelligence validation and compliance review.</p>
+          <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex gap-3 text-sm">
+             <AlertCircle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+             <p className="text-blue-400/90 leading-relaxed">To unlock automated global distribution and institutional licensing tools, you must provide official KYC and corporate governance documents for AI and manual review.</p>
+          </div>
+          
           <div className="space-y-4">
-            <div className="border border-dashed border-white/20 p-6 rounded-xl text-center hover:border-eterna-rose hover:bg-eterna-rose/5 transition-all cursor-pointer">
-              <UploadCloud className="w-8 h-8 text-white/50 mx-auto mb-2" />
-              <div className="font-bold text-sm">Upload Registration Documents</div>
-              <div className="text-xs text-white/40">PDF, JPG, PNG</div>
+            <div className="border border-dashed border-white/20 p-6 rounded-xl text-center hover:border-eterna-rose/50 hover:bg-eterna-rose/5 transition-all cursor-pointer group">
+              <UploadCloud className="w-8 h-8 text-white/30 mx-auto mb-2 group-hover:text-eterna-rose transition-colors" />
+              <div className="font-bold text-sm">Corporate Registry Extract</div>
+              <div className="text-xs text-white/40 mt-1">Articles of Incorporation (PDF, JPG, PNG)</div>
             </div>
-            <div className="border border-dashed border-white/20 p-6 rounded-xl text-center hover:border-eterna-rose hover:bg-eterna-rose/5 transition-all cursor-pointer">
-               <UploadCloud className="w-8 h-8 text-white/50 mx-auto mb-2" />
-              <div className="font-bold text-sm">Upload Tax Certificates</div>
+            <div className="border border-dashed border-white/20 p-6 rounded-xl text-center hover:border-eterna-rose/50 hover:bg-eterna-rose/5 transition-all cursor-pointer group">
+               <ShieldCheck className="w-8 h-8 text-white/30 mx-auto mb-2 group-hover:text-eterna-rose transition-colors" />
+              <div className="font-bold text-sm">Tax Identification Certificate</div>
+              <div className="text-xs text-white/40 mt-1">VAT / GST / EIN Record</div>
+            </div>
+            <div className="border border-dashed border-white/20 p-6 rounded-xl text-center hover:border-eterna-rose/50 hover:bg-eterna-rose/5 transition-all cursor-pointer group">
+               <Building className="w-8 h-8 text-white/30 mx-auto mb-2 group-hover:text-eterna-rose transition-colors" />
+              <div className="font-bold text-sm">Bank Letter of Good Standing</div>
+              <div className="text-xs text-white/40 mt-1">Must be issued within the last 90 days</div>
             </div>
           </div>
-          <button onClick={() => setStep(1)} className="w-full bg-eterna-rose text-white py-3 rounded-xl font-bold">Submit for Verification</button>
+          <button onClick={handleStart} className="w-full bg-white text-black hover:bg-gray-200 py-3.5 rounded-xl font-bold transition-all shadow-lg">Upload Files & Initiate Verification</button>
         </div>
       )}
       {step > 0 && (
-        <div className="py-10 space-y-8">
+        <div className="py-8 space-y-8">
           <div className="flex items-center gap-4">
-             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-green-500' : 'bg-white/10'}`}><CheckCircle2 className="w-4 h-4 text-white"/></div>
-             <div className={step >= 1 ? 'text-white' : 'text-white/50'}>Document Upload Complete</div>
+             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg ${step >= 1 ? 'bg-green-500' : 'bg-white/5 border border-white/10'}`}>{step >= 1 ? <CheckCircle2 className="w-5 h-5 text-black"/> : <div className="w-2 h-2 rounded-full bg-white/20" />}</div>
+             <div>
+               <div className={`font-bold text-lg ${step >= 1 ? 'text-white' : 'text-white/40'}`}>Ingesting Documents</div>
+               <div className="text-sm text-white/50">Parsing PDF data into the registry.</div>
+             </div>
           </div>
           <div className="flex items-center gap-4">
-             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-blue-500' : 'bg-white/10'} ${step === 1 ? 'animate-pulse' : ''}`}>{step >= 2 ? <CheckCircle2 className="w-4 h-4 text-white"/> : <Sparkles className="w-4 h-4 text-white/50"/>}</div>
-             <div className={step >= 2 ? 'text-white' : 'text-white/50'}>AI Validation & Entity Checking</div>
+             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg ${step >= 2 ? 'bg-blue-500' : 'bg-white/5 border border-white/10'} ${step === 1 ? 'animate-pulse bg-blue-500/20 border-blue-500/50 text-blue-400' : ''}`}>
+               {step >= 2 ? <CheckCircle2 className="w-5 h-5 text-white"/> : <Sparkles className={`w-5 h-5 ${step === 1 ? 'text-blue-400' : 'text-white/20'}`}/>}
+             </div>
+             <div>
+               <div className={`font-bold text-lg ${step >= 2 ? 'text-white' : step === 1 ? 'text-blue-400' : 'text-white/40'}`}>AI Fraud Analysis & Layout Check</div>
+               <div className="text-sm text-white/50">Cross-referencing global sanction databases.</div>
+             </div>
           </div>
           <div className="flex items-center gap-4">
-             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-yellow-500' : 'bg-white/10'} ${step === 2 ? 'animate-pulse' : ''}`}>{step >= 3 ? <CheckCircle2 className="w-4 h-4 text-white"/> : <Shield className="w-4 h-4 text-white/50"/>}</div>
-             <div className={step >= 3 ? 'text-white' : 'text-white/50'}>Compliance Review</div>
+             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg ${step >= 3 ? 'bg-yellow-500' : 'bg-white/5 border border-white/10'} ${step === 2 ? 'animate-pulse bg-yellow-500/20 border-yellow-500/50 text-yellow-400' : ''}`}>
+               {step >= 3 ? <CheckCircle2 className="w-5 h-5 text-black"/> : <Shield className={`w-5 h-5 ${step === 2 ? 'text-yellow-400' : 'text-white/20'}`}/>}
+             </div>
+             <div>
+               <div className={`font-bold text-lg ${step >= 3 ? 'text-white' : step === 2 ? 'text-yellow-400' : 'text-white/40'}`}>Compliance Risk Scoring</div>
+               <div className="text-sm text-white/50">Evaluating jurisdictional requirements.</div>
+             </div>
           </div>
-          {step === 4 && (
-            <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-xl text-center mt-8 animate-in fade-in zoom-in">
-              <ShieldCheck className="w-12 h-12 text-green-400 mx-auto mb-2" />
-              <div className="font-bold text-green-400 text-lg">Verification Approved</div>
-              <p className="text-sm text-green-400/70 mt-1">Your organization is now officially verified in the Eterna ecosystem.</p>
-              <button onClick={onClose} className="mt-4 bg-green-500 text-black px-6 py-2 rounded-lg font-bold">Done</button>
+          <div className="flex items-center gap-4">
+             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg ${step >= 4 ? 'bg-green-500' : 'bg-white/5 border border-white/10'} ${step === 3 ? 'animate-pulse bg-white/20 border-white/50 text-white' : ''}`}>
+               {step >= 4 ? <CheckCircle2 className="w-5 h-5 text-black"/> : <FileText className={`w-5 h-5 ${step === 3 ? 'text-white' : 'text-white/20'}`}/>}
+             </div>
+             <div>
+               <div className={`font-bold text-lg ${step > 3 ? 'text-white' : step === 3 ? 'text-white' : 'text-white/40'}`}>Audit Ledger Finalization</div>
+               <div className="text-sm text-white/50">Writing to cryptographically secure log.</div>
+             </div>
+          </div>
+          {step === 5 && (
+            <div className="bg-green-500/10 border border-green-500/20 p-6 rounded-2xl text-center mt-8 animate-in fade-in zoom-in shadow-[0_0_30px_rgba(34,197,94,0.1)]">
+              <ShieldCheck className="w-16 h-16 text-green-400 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+              <div className="font-bold text-green-400 text-2xl mb-1">Organization Verified</div>
+              <p className="text-sm text-green-400/70 max-w-sm mx-auto leading-relaxed">Your corporate entity has passed all critical AI and compliance checks. Institutional tools are now unlocked.</p>
+              <button onClick={onClose} className="mt-6 w-full sm:w-auto bg-green-500 hover:bg-green-400 transition-colors text-black px-10 py-3 rounded-xl font-bold shadow-lg">Enter Dashboard</button>
             </div>
           )}
         </div>
@@ -151,39 +190,87 @@ export function TeamInviteModal({ onClose }: { onClose: () => void }) {
 // 4. Treasury Wallet Center
 export function TreasuryWalletModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState('select');
+  const [method, setMethod] = useState('');
+  const [verifying, setVerifying] = useState(false);
+
+  const handleSelect = (m: string) => {
+    setMethod(m);
+    setStep('verify');
+  };
+
+  const handleInitiate = () => {
+    setVerifying(true);
+    setTimeout(() => {
+      setStep('done');
+      setVerifying(false);
+    }, 2000);
+  };
+
   return (
     <WorkflowModal title="Treasury Wallet Center" icon={<DollarSign className="text-green-400" />} onClose={onClose}>
       {step === 'select' && (
-        <div className="grid grid-cols-2 gap-4">
-          <button onClick={() => setStep('verify')} className="bg-black border border-white/10 p-6 rounded-xl hover:border-green-400 hover:bg-green-400/5 transition-all flex flex-col items-center">
-            <Building className="w-8 h-8 mb-2 text-white/70" /><span className="font-bold">Bank Account</span>
-          </button>
-          <button onClick={() => setStep('verify')} className="bg-black border border-white/10 p-6 rounded-xl hover:border-green-400 hover:bg-green-400/5 transition-all flex flex-col items-center">
-            <Globe className="w-8 h-8 mb-2 text-white/70" /><span className="font-bold">Stripe / Wise</span>
-          </button>
-          <button onClick={() => setStep('verify')} className="bg-black border border-white/10 p-6 rounded-xl hover:border-green-400 hover:bg-green-400/5 transition-all flex flex-col items-center">
-            <Smartphone className="w-8 h-8 mb-2 text-white/70" /><span className="font-bold">Mobile Money</span>
-          </button>
-          <button onClick={() => setStep('verify')} className="bg-black border border-white/10 p-6 rounded-xl hover:border-green-400 hover:bg-green-400/5 transition-all flex flex-col items-center">
-            <Key className="w-8 h-8 mb-2 text-white/70" /><span className="font-bold">Crypto Wallet</span>
-          </button>
+        <div className="space-y-6">
+          <p className="text-sm text-white/50">Select a payout destination. External ledgers require micro-validation for security.</p>
+          <div className="grid grid-cols-2 gap-4">
+            <button onClick={() => handleSelect('Bank Account')} className="bg-[#111] border border-white/10 p-6 rounded-2xl hover:border-green-400 hover:bg-green-400/5 transition-all flex flex-col items-center group shadow-lg">
+              <Building className="w-10 h-10 mb-3 text-white/30 group-hover:text-green-400 transition-colors" /><span className="font-bold">Bank Account</span>
+            </button>
+            <button onClick={() => handleSelect('Stripe / PayPal')} className="bg-[#111] border border-white/10 p-6 rounded-2xl hover:border-green-400 hover:bg-green-400/5 transition-all flex flex-col items-center group shadow-lg">
+              <Globe className="w-10 h-10 mb-3 text-white/30 group-hover:text-green-400 transition-colors" /><span className="font-bold">Stripe / PayPal</span>
+            </button>
+            <button onClick={() => handleSelect('Mobile Money')} className="bg-[#111] border border-white/10 p-6 rounded-2xl hover:border-green-400 hover:bg-green-400/5 transition-all flex flex-col items-center group shadow-lg">
+              <Smartphone className="w-10 h-10 mb-3 text-white/30 group-hover:text-green-400 transition-colors" /><span className="font-bold">Mobile Money</span>
+            </button>
+            <button onClick={() => handleSelect('Crypto Web3')} className="bg-[#111] border border-white/10 p-6 rounded-2xl hover:border-green-400 hover:bg-green-400/5 transition-all flex flex-col items-center group shadow-lg">
+              <Key className="w-10 h-10 mb-3 text-white/30 group-hover:text-green-400 transition-colors" /><span className="font-bold">Crypto Web3</span>
+            </button>
+          </div>
         </div>
       )}
       {step === 'verify' && (
-        <div className="space-y-4">
-          <p className="text-sm text-white/50">Enter credentials for verification. Eterna will perform a micro-validation transaction to ensure ownership.</p>
-          <input type="text" className="w-full bg-black border border-white/10 rounded-lg p-3" placeholder="Account Name" />
-          <input type="text" className="w-full bg-black border border-white/10 rounded-lg p-3" placeholder="Account / IBAN Number" />
-          <input type="text" className="w-full bg-black border border-white/10 rounded-lg p-3" placeholder="SWIFT / Routing" />
-          <button onClick={() => setStep('done')} className="w-full bg-green-500 text-black py-3 rounded-xl font-bold">Initiate Micro-Validation</button>
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 bg-white/5 p-4 rounded-xl border border-white/10">
+             <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center shrink-0"><ShieldCheck className="w-5 h-5 text-green-400" /></div>
+             <div>
+               <div className="font-bold text-sm">Security Micro-Validation</div>
+               <div className="text-xs text-white/50 leading-relaxed">We will deposit a random amount under $1.00 to verify ownership. Depending on your bank, this may take 1-3 days.</div>
+             </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+               <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1.5 block">Account Name</label>
+               <input type="text" className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white focus:border-green-400 outline-none" placeholder="Eterna Studios LLC" />
+            </div>
+            <div>
+               <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1.5 block">{method === 'Crypto Web3' ? 'Wallet Address' : method === 'Bank Account' ? 'IBAN / Routing Number' : 'Account Email / ID'}</label>
+               <input type="text" className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-white focus:border-green-400 outline-none font-mono" placeholder="..." />
+            </div>
+          </div>
+          <button onClick={handleInitiate} disabled={verifying} className="w-full bg-green-500 hover:bg-green-400 text-black py-4 rounded-xl font-bold shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all flex items-center justify-center gap-2">
+            {verifying ? <AlertCircle className="w-5 h-5 animate-spin" /> : <DollarSign className="w-5 h-5" />}
+            {verifying ? 'Initiating Ledger Sequence...' : 'Initiate Micro-Deposit'}
+          </button>
         </div>
       )}
       {step === 'done' && (
-        <div className="text-center py-10">
-          <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
-          <h3 className="text-xl font-bold">Under Verification</h3>
-          <p className="text-white/50 mb-6 mt-2">A small deposit has been sent. Enter the code once received to activate this wallet.</p>
-          <button onClick={onClose} className="bg-white/10 px-6 py-2 rounded-lg font-bold">Close Manager</button>
+        <div className="py-8 animate-in fade-in zoom-in">
+          <div className="bg-green-500/10 border border-green-500/20 p-8 rounded-3xl text-center shadow-[0_0_30px_rgba(34,197,94,0.1)] mb-6">
+            <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+            <h3 className="text-2xl font-bold text-green-400 mb-2">Deposit Sent</h3>
+            <p className="text-sm text-green-400/80 mb-6 max-w-sm mx-auto leading-relaxed">A micro-deposit has been authorized. Check your {method} statement in 1-3 business days and enter the exact amount here to unlock payouts.</p>
+            
+            <div className="bg-black/50 border border-white/10 rounded-xl p-6">
+               <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-3 block">Enter Verification Amount</label>
+               <div className="flex gap-4">
+                 <div className="relative flex-1">
+                   <DollarSign className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
+                   <input type="text" className="w-full bg-black border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white font-mono placeholder:text-white/20 outline-none focus:border-green-400 text-lg" placeholder="0.00" />
+                 </div>
+                 <button onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-lg font-bold transition-colors shrink-0">Verify</button>
+               </div>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-full text-center text-sm text-white/50 hover:text-white font-bold transition-colors">Close Manager for Now</button>
         </div>
       )}
     </WorkflowModal>
@@ -320,31 +407,92 @@ export function BrandIdentityModal({ onClose }: { onClose: () => void }) {
 
 // 9. Theme Studio Modal
 export function ThemeStudioModal({ onClose }: { onClose: () => void }) {
+  const [activeTheme, setActiveTheme] = useState('midnight');
+  const [primaryColor, setPrimaryColor] = useState('#EC4899');
+  const [fontFamily, setFontFamily] = useState('Inter');
+
   return (
     <WorkflowModal title="Theme Studio" icon={<Palette className="text-pink-400" />} onClose={onClose}>
-      <div className="space-y-6">
-         <p className="text-sm text-white/50">Apply a comprehensive design language across the player engine and public profiles.</p>
-         <div className="grid grid-cols-2 gap-4">
-            <div className="border border-pink-500 bg-pink-500/10 p-4 rounded-xl text-center relative shadow-[0_0_15px_rgba(236,72,153,0.3)]">
-               <div className="absolute top-2 right-2 w-4 h-4 bg-pink-500 rounded-full flex items-center justify-center"><CheckCircle2 className="w-3 h-3 text-black" /></div>
-               <div className="w-full h-20 bg-black rounded-lg mb-3 border border-white/20"></div>
-               <div className="font-bold text-sm">Midnight</div>
-               <div className="text-[10px] text-white/50 mt-1 uppercase tracking-widest">Active</div>
-            </div>
-            <div className="border border-white/10 bg-[#111] hover:bg-white/5 p-4 rounded-xl text-center transition-colors cursor-pointer">
-               <div className="w-full h-20 bg-white rounded-lg mb-3 shadow-inner"></div>
-               <div className="font-bold text-sm">Light Studio</div>
-            </div>
-            <div className="border border-white/10 bg-[#111] hover:bg-yellow-500/10 p-4 rounded-xl text-center transition-colors cursor-pointer">
-               <div className="w-full h-20 bg-gradient-to-br from-black to-yellow-900/50 rounded-lg mb-3 border border-yellow-500/20"></div>
-               <div className="font-bold text-sm">Creator Gold</div>
-            </div>
-            <div className="border border-white/10 bg-[#111] hover:bg-blue-500/10 p-4 rounded-xl text-center transition-colors cursor-pointer">
-               <div className="w-full h-20 bg-gradient-to-br from-slate-900 to-blue-900/50 rounded-lg mb-3 border border-blue-500/20"></div>
-               <div className="font-bold text-sm">Aurora Blue</div>
-            </div>
-         </div>
-         <button onClick={onClose} className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl mt-4">Save Theme Configuration</button>
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="w-full md:w-1/2 space-y-6">
+           <div className="space-y-3">
+             <label className="text-xs font-bold text-white/50 uppercase tracking-wider block">Palette Presets</label>
+             <div className="grid grid-cols-2 gap-3">
+               <button onClick={() => setActiveTheme('midnight')} className={`border ${activeTheme === 'midnight' ? 'border-pink-500 bg-pink-500/10' : 'border-white/10 bg-black hover:border-white/30'} p-3 rounded-xl flex flex-col justify-between transition-colors text-left h-20`}>
+                 <span className="font-bold text-sm">Midnight</span>
+                 <div className="flex gap-1 mt-auto"><div className="w-3 h-3 rounded-full bg-pink-500"/><div className="w-3 h-3 rounded-full bg-black border border-white/20"/></div>
+               </button>
+               <button onClick={() => setActiveTheme('light')} className={`border ${activeTheme === 'light' ? 'border-pink-500 bg-pink-500/10' : 'border-white/10 bg-black hover:border-white/30'} p-3 rounded-xl flex flex-col justify-between transition-colors text-left h-20`}>
+                 <span className="font-bold text-sm">Light Studio</span>
+                 <div className="flex gap-1 mt-auto"><div className="w-3 h-3 rounded-full bg-gray-900"/><div className="w-3 h-3 rounded-full bg-white border border-gray-200"/></div>
+               </button>
+               <button onClick={() => setActiveTheme('gold')} className={`border ${activeTheme === 'gold' ? 'border-yellow-500 bg-yellow-500/10' : 'border-white/10 bg-black hover:border-white/30'} p-3 rounded-xl flex flex-col justify-between transition-colors text-left h-20`}>
+                 <span className="font-bold text-sm">Creator Gold</span>
+                 <div className="flex gap-1 mt-auto"><div className="w-3 h-3 rounded-full bg-yellow-500"/><div className="w-3 h-3 rounded-full bg-amber-900 border border-yellow-500/20"/></div>
+               </button>
+               <button onClick={() => setActiveTheme('aurora')} className={`border ${activeTheme === 'aurora' ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 bg-black hover:border-white/30'} p-3 rounded-xl flex flex-col justify-between transition-colors text-left h-20`}>
+                 <span className="font-bold text-sm">Aurora Blue</span>
+                 <div className="flex gap-1 mt-auto"><div className="w-3 h-3 rounded-full bg-blue-500"/><div className="w-3 h-3 rounded-full bg-slate-900 border border-blue-500/20"/></div>
+               </button>
+             </div>
+           </div>
+           
+           <div className="space-y-4 pt-4 border-t border-white/10">
+             <label className="text-xs font-bold text-white/50 uppercase tracking-wider block">Interface Variables</label>
+             <div>
+               <label className="text-[10px] uppercase font-bold text-white/40 block mb-2">Primary Brand Accent</label>
+               <div className="flex items-center gap-3 bg-black border border-white/10 p-2 rounded-xl">
+                 <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer bg-transparent border-none p-0" />
+                 <span className="font-mono text-sm text-white/80">{primaryColor.toUpperCase()}</span>
+               </div>
+             </div>
+             <div>
+               <label className="text-[10px] uppercase font-bold text-white/40 block mb-2">Typography System</label>
+               <select value={fontFamily} onChange={e => setFontFamily(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl p-3 text-sm text-white outline-none focus:border-white/30 appearance-none">
+                 <option value="Inter">Inter (Default, Clean)</option>
+                 <option value="Space Grotesk">Space Grotesk (Tech, Display)</option>
+                 <option value="Playfair Display">Playfair Display (Editorial)</option>
+                 <option value="JetBrains Mono">JetBrains Mono (Developer)</option>
+               </select>
+             </div>
+           </div>
+        </div>
+        
+        {/* Live Preview Area */}
+        <div className="w-full md:w-1/2 bg-[#050505] border border-white/10 rounded-2xl p-6 relative overflow-hidden" style={{ fontFamily: fontFamily.includes(' ') ? `"${fontFamily}"` : fontFamily }}>
+           <div className="text-[10px] font-bold text-white/30 mb-6 uppercase tracking-widest flex items-center gap-2">
+             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div> Live Sandbox
+           </div>
+           
+           <div className={`space-y-6 ${activeTheme === 'light' ? 'bg-white text-black p-4 -m-4 rounded-xl' : ''}`}>
+              <div className="flex justify-between items-center">
+                 <div className="font-bold text-xl tracking-tight">Discover</div>
+                 <div className="w-8 h-8 rounded-full flex items-center justify-center bg-black/10" style={{ backgroundColor: activeTheme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)' }}><CheckCircle2 className="w-4 h-4" /></div>
+              </div>
+              <p className={`text-sm ${activeTheme === 'light' ? 'text-gray-500' : 'text-white/50'} leading-relaxed`}>
+                This is a real-time preview of how your typography and color selections will render to the end user across the platform.
+              </p>
+              
+              <button className="w-full py-3 rounded-xl text-white font-bold transition-all shadow-lg" style={{ backgroundColor: primaryColor }}>
+                Primary Action
+              </button>
+              
+              <div className="flex gap-3">
+                 <div className={`h-24 flex-1 rounded-xl border p-4 flex flex-col justify-between ${activeTheme === 'light' ? 'border-gray-200 bg-gray-50' : 'border-white/10 bg-white/5'}`}>
+                   <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: primaryColor, opacity: 0.2 }}></div>
+                   <div className={`w-full h-2 rounded-full ${activeTheme === 'light' ? 'bg-gray-200' : 'bg-white/20'}`}></div>
+                 </div>
+                 <div className={`h-24 flex-1 rounded-xl border p-4 flex flex-col justify-between ${activeTheme === 'light' ? 'border-gray-200 bg-gray-50' : 'border-white/10 bg-white/5'}`}>
+                    <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: primaryColor, opacity: 0.2 }}></div>
+                   <div className={`w-3/4 h-2 rounded-full ${activeTheme === 'light' ? 'bg-gray-200' : 'bg-white/20'}`}></div>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </div>
+      <div className="mt-8 pt-6 border-t border-white/10 flex justify-end gap-3">
+         <button onClick={onClose} className="px-6 py-2.5 text-sm font-bold text-white hover:bg-white/5 rounded-xl transition-colors border border-transparent">Cancel</button>
+         <button onClick={onClose} className="px-6 py-2.5 text-sm font-bold bg-white hover:bg-gray-200 text-black rounded-xl transition-colors shadow-lg">Deploy Theme</button>
       </div>
     </WorkflowModal>
   );
@@ -405,3 +553,111 @@ export function DataExportModal({ onClose }: { onClose: () => void }) {
     </WorkflowModal>
   );
 }
+
+// 11. Notification Builder Modal
+export function NotificationRuleModal({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (step === 1) {
+      const t = setTimeout(() => {
+        setStep(2);
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [step]);
+
+  return (
+    <WorkflowModal title="Workflow Automation Builder" icon={<Bell className="text-yellow-400" />} onClose={onClose}>
+      {step === 0 && (
+         <div className="space-y-6">
+           <div className="space-y-4">
+             <div>
+               <label className="text-xs font-bold text-white/50 block mb-2">IF Event Trigger</label>
+               <select className="w-full bg-black border border-white/10 rounded-xl p-3 text-white appearance-none">
+                 <option>Revenue.Transaction &gt;= $10,000</option>
+                 <option>System.Security.MfaFailedAttempts &gt;= 5</option>
+                 <option>Content.Asset.UploadCompleted</option>
+                 <option>User.Subscription.Canceled</option>
+               </select>
+             </div>
+             <div>
+               <label className="text-xs font-bold text-white/50 block mb-2">THEN Perform Action(s)</label>
+               <div className="space-y-2">
+                 <label className="flex items-center gap-3 p-3 bg-black border border-white/10 rounded-xl cursor-pointer">
+                   <input type="checkbox" defaultChecked className="accent-yellow-500" />
+                   <span className="text-sm">Send Email Alert</span>
+                 </label>
+                 <label className="flex items-center gap-3 p-3 bg-black border border-white/10 rounded-xl cursor-pointer">
+                   <input type="checkbox" className="accent-yellow-500" />
+                   <span className="text-sm">Send SMS Text</span>
+                 </label>
+                 <label className="flex items-center gap-3 p-3 bg-black border border-white/10 rounded-xl cursor-pointer">
+                   <input type="checkbox" defaultChecked className="accent-yellow-500" />
+                   <span className="text-sm">In-App Notification</span>
+                 </label>
+               </div>
+             </div>
+             <div>
+               <label className="text-xs font-bold text-white/50 block mb-2">Target Audience Group</label>
+               <select className="w-full bg-black border border-white/10 rounded-xl p-3 text-white appearance-none">
+                 <option>All Administrators</option>
+                 <option>Treasury & Finance Team</option>
+                 <option>Security Team Leads</option>
+                 <option>Specific User Emails</option>
+               </select>
+             </div>
+           </div>
+           <button onClick={() => setStep(1)} className="w-full bg-yellow-500 text-black py-3 rounded-xl font-bold mt-2 shadow-[0_0_15px_rgba(234,179,8,0.3)]">Save & Activate Rule</button>
+         </div>
+      )}
+      {step === 1 && (
+         <div className="py-10 text-center animate-pulse">
+            <SettingsIcon className="w-12 h-12 text-yellow-400 mx-auto mb-4 animate-spin-slow" />
+            <p className="font-bold">Compiling automation rule...</p>
+         </div>
+      )}
+      {step === 2 && (
+         <div className="py-8 text-center text-green-400">
+            <CheckCircle2 className="w-16 h-16 mx-auto mb-4" />
+            <h3 className="font-bold text-xl mb-2">Rule Activated</h3>
+            <p className="text-sm text-green-400/50 mb-6">The system will now monitor events globally to trigger this workflow.</p>
+            <button onClick={onClose} className="bg-white/10 text-white px-6 py-2 rounded-lg font-bold hover:bg-white/20 transition-colors">Done</button>
+         </div>
+      )}
+    </WorkflowModal>
+  );
+}
+
+// 12. Generic Redirect Modal
+export function GenericRedirectModal({ target, onClose }: { target: string, onClose: () => void }) {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (step === 0) {
+      const t = setTimeout(() => setStep(1), 1200);
+      return () => clearTimeout(t);
+    }
+  }, [step]);
+
+  return (
+    <WorkflowModal title={`Opening ${target}`} icon={<Globe className="text-blue-400" />} onClose={onClose}>
+      {step === 0 && (
+         <div className="py-10 text-center animate-pulse">
+            <Activity className="w-12 h-12 text-blue-400 mx-auto mb-4" />
+            <h3 className="font-bold text-lg mb-2">Establishing Secure Connection</h3>
+            <p className="text-sm text-white/50">Routing to the {target} module via Zero-Trust Proxy...</p>
+         </div>
+      )}
+      {step === 1 && (
+         <div className="py-8 text-center text-green-400">
+            <CheckCircle2 className="w-16 h-16 mx-auto mb-4" />
+            <h3 className="font-bold text-xl mb-2">Connected successfully</h3>
+            <p className="text-sm text-green-400/50 mb-6">In a live environment, you would now be redirected to the dedicated {target} interface.</p>
+            <button onClick={onClose} className="bg-white/10 text-white px-6 py-2 rounded-lg font-bold hover:bg-white/20 transition-colors">Return to Settings</button>
+         </div>
+      )}
+    </WorkflowModal>
+  );
+}
+

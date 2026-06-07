@@ -1,15 +1,16 @@
 import { Crown, Play, Info, ArrowRight, ArrowUp, Plus, Sparkles, MessageCircle } from "lucide-react";
 import React, { useState, useEffect } from "react";
+import { motion } from "motion/react";
 import { useAppStore } from "../lib/store";
 import { TopNav, BottomNav } from "../components/Navigation";
 import { ContentCard } from "../components/Cards";
-import { CATALOG } from "../lib/data";
+// import { CATALOG } from "../lib/data";
 
 import { Content } from "../types";
 
 export function HomeScreen() {
-  const { go, setContent, watchlist, toggleWatchlist } = useAppStore();
-  const heroC = CATALOG[0];
+  const { go, setContent, watchlist, toggleWatchlist, catalog } = useAppStore();
+  const heroC = catalog[0];
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -37,17 +38,17 @@ export function HomeScreen() {
   // Personalized Recommendation Logic
   const myGenres = new Set(
     watchlist
-      .map(id => CATALOG.find(c => c.id === id))
+      .map(id => catalog.find(c => c.id === id))
       .filter(Boolean)
       .flatMap(c => c!.genres)
   );
 
-  let recommendedContent = CATALOG.filter(c => 
+  let recommendedContent = catalog.filter(c => 
     !watchlist.includes(c.id) && c.genres.some(g => myGenres.has(g))
   );
 
   if (recommendedContent.length === 0) {
-    recommendedContent = CATALOG.slice(1, 7); // Fallback if no specific recommendations
+    recommendedContent = catalog.slice(1, 7); // Fallback if no specific recommendations
   }
 
   return (
@@ -98,12 +99,12 @@ export function HomeScreen() {
 
       <div className="relative z-20 pb-12 space-y-4">
         {watchlist.length > 0 && (
-          <Section title="My List" data={CATALOG.filter(c => watchlist.includes(c.id))} />
+          <Section title="My List" data={catalog.filter(c => watchlist.includes(c.id))} />
         )}
-        <Section title="Trending Now" data={CATALOG.slice(0, 8)} />
-        <Section title="Popular on Eterna" data={CATALOG.slice(4, 9)} />
-        <Section title="Continue Watching" data={CATALOG.slice(2, 6)} wide />
-        <Section title="New Releases" data={CATALOG.filter(c => c.tag === 'new')} />
+        <Section title="Trending Now" data={catalog.slice(0, 8)} />
+        <Section title="Popular on Eterna" data={catalog.slice(4, 9)} />
+        <Section title="Continue Watching" data={catalog.slice(2, 6)} wide />
+        <Section title="New Releases" data={catalog.filter(c => c.tag === 'new')} />
         <Section title="Recommended for You" data={recommendedContent} />
       </div>
 
@@ -151,10 +152,17 @@ function Section({ title, badge, data, wide }: { title: string, badge?: string, 
         </div>
       </div>
       <div className="flex gap-[16px] overflow-x-auto pb-[16px] hide-scrollbar overscroll-x-contain snap-x">
-        {data.map(item => (
-           <div key={item.id} className="snap-start shrink-0">
+        {data.map((item, i) => (
+           <motion.div 
+             key={item.id} 
+             className="snap-start shrink-0"
+             initial={{ opacity: 0, x: 20 }}
+             whileInView={{ opacity: 1, x: 0 }}
+             viewport={{ once: true, amount: 0.1 }}
+             transition={{ duration: 0.5, delay: i * 0.05 }}
+           >
              <ContentCard content={item} wide={wide} />
-           </div>
+           </motion.div>
         ))}
       </div>
     </div>

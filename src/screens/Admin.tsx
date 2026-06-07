@@ -1,34 +1,94 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../lib/store';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, Legend, AreaChart, Area
 } from 'recharts';
+import * as d3 from 'd3';
 import { 
   ArrowLeft, LayoutDashboard, Film, BarChart3, Users,
   Activity, DollarSign, Brain, ShieldAlert, FileCheck, CheckCircle2, XCircle,
   ShoppingBag, Megaphone, UserCheck, Lock, Globe, Clock,
-  Zap, Play, Download, Video
+  Zap, Play, Download, Video, Bell, Upload, X
 } from 'lucide-react';
+
+export const eternaEventBus = {
+  emit: (type: string, message: string) => {
+    window.dispatchEvent(new CustomEvent('eterna-event', { detail: { type, message, time: new Date() } }));
+  },
+  subscribe: (callback: (e: any) => void) => {
+    const handler = (e: any) => callback(e.detail);
+    window.addEventListener('eterna-event', handler);
+    return () => window.removeEventListener('eterna-event', handler);
+  }
+};
+
+function NotificationCenter() {
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = eternaEventBus.subscribe((detail) => {
+      setAlerts(prev => [detail, ...prev].slice(0, 50));
+    });
+    return unsubscribe;
+  }, []);
+
+  return (
+    <div className="absolute top-6 right-8 z-40">
+      <div 
+        className="relative cursor-pointer w-12 h-12 rounded-full bg-[#1a1a1a] border border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <Bell className="w-5 h-5 text-white/80" />
+        {alerts.length > 0 && <div className="absolute top-0 right-0 w-4 h-4 bg-eterna-red rounded-full border border-black text-[9px] font-bold flex items-center justify-center text-white">{alerts.length}</div>}
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-14 right-0 w-[400px] bg-[#111] border border-white/10 rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[500px]">
+          <div className="p-4 border-b border-white/10 font-bold flex justify-between bg-[#0a0a0a]">
+             <span>Eterna Event Bus</span>
+             <button onClick={() => setAlerts([])} className="text-[12px] text-white/40 hover:text-white">Clear</button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+             {alerts.length === 0 && <div className="text-white/30 text-center text-sm py-4">No recent events</div>}
+             {alerts.map((a, i) => (
+                <div key={i} className="flex gap-3 items-start animate-in slide-in-from-right-2">
+                   <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
+                      {a.type === 'SUCCESS' ? <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> : <Activity className="w-3.5 h-3.5 text-blue-400" />}
+                   </div>
+                   <div>
+                     <div className="text-[13px]">{a.message}</div>
+                     <div className="text-[10px] text-white/40 mt-1">{a.time.toLocaleTimeString()}</div>
+                   </div>
+                </div>
+             ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function AdminScreen() {
   const { go } = useAppStore();
   const [activeMenu, setActiveMenu] = useState('dashboard');
+  const [workflowDetails, setWorkflowDetails] = useState<any>(null);
 
   const renderContent = () => {
     switch (activeMenu) {
-      case 'dashboard': return <Dashboard />;
-      case 'acquisition': return <AcquisitionCenter />;
-      case 'library': return <LibraryManagement />;
-      case 'creators': return <CreatorManagement />;
-      case 'marketplace': return <Marketplace />;
-      case 'audience': return <AudienceIntelligence />;
-      case 'ads': return <AdManagement />;
-      case 'streaming': return <StreamingOperations />;
-      case 'moderation': return <ModerationCenter />;
-      case 'revenue': return <RevenueIntelligence />;
-      case 'ai': return <AiIntelligence />;
-      default: return <Dashboard />;
+      case 'dashboard': return <Dashboard triggerWorkflow={setWorkflowDetails} />;
+      case 'acquisition': return <AcquisitionCenter triggerWorkflow={setWorkflowDetails} />;
+      case 'library': return <LibraryManagement triggerWorkflow={setWorkflowDetails} />;
+      case 'creators': return <CreatorManagement triggerWorkflow={setWorkflowDetails} />;
+      case 'marketplace': return <Marketplace triggerWorkflow={setWorkflowDetails} />;
+      case 'audience': return <AudienceIntelligence triggerWorkflow={setWorkflowDetails} />;
+      case 'ads': return <AdManagement triggerWorkflow={setWorkflowDetails} />;
+      case 'streaming': return <StreamingOperations triggerWorkflow={setWorkflowDetails} />;
+      case 'moderation': return <ModerationCenter triggerWorkflow={setWorkflowDetails} />;
+      case 'revenue': return <RevenueIntelligence triggerWorkflow={setWorkflowDetails} />;
+      case 'ai': return <AiIntelligence triggerWorkflow={setWorkflowDetails} />;
+      default: return <Dashboard triggerWorkflow={setWorkflowDetails} />;
     }
   };
 
@@ -68,8 +128,11 @@ export function AdminScreen() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto no-scrollbar relative min-h-0 bg-[#080808]">
+        <NotificationCenter />
         {renderContent()}
       </div>
+      
+      {workflowDetails && <SuperAdminWorkflowModal details={workflowDetails} onClose={() => setWorkflowDetails(null)} />}
     </div>
   );
 }
@@ -106,7 +169,7 @@ function MetricCard({ label, value, status, type = 'normal' }: any) {
 // EXECUTIVE SCREENS
 // ----------------------------------------------------
 
-function Dashboard() {
+function Dashboard({ triggerWorkflow }: any) {
   const genreData = [
     { name: 'Drama', value: 580000 },
     { name: 'Docs', value: 420000 },
@@ -146,7 +209,16 @@ function Dashboard() {
         <div className="lg:col-span-2 bg-[#111] border border-white/5 p-6 rounded-xl">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold">Content Performance & ROI by Genre</h2>
-            <button className="text-[12px] bg-white/10 px-3 py-1 rounded hover:bg-white/20">Generate Report</button>
+            <button onClick={() => triggerWorkflow({
+               title: "ROI & Performance Reporter",
+               endpoint: "/analytics/reports/ceo-performance",
+               steps: [
+                 "Compile Global Viewing Data",
+                 "Calculate Revenue Attribution",
+                 "Format Executive Briefing",
+                 "Deliver to Executive Inbox"
+               ]
+            })} className="text-[12px] bg-white/10 px-3 py-1 rounded hover:bg-white/20">Generate Report</button>
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -213,8 +285,8 @@ function RegionRow({ name, val, pct }: any) {
 // CONTENT & CREATORS
 // ----------------------------------------------------
 
-function AcquisitionCenter() {
-  const { showToast } = useAppStore();
+function AcquisitionCenter({ triggerWorkflow }: any) {
+  const { showToast, publishContent } = useAppStore();
   const [selectedSub, setSelectedSub] = useState<any>(null);
   const [showRejectReason, setShowRejectReason] = useState(false);
   const [rejectReason, setRejectReason] = useState('Legal Issues');
@@ -223,13 +295,74 @@ function AcquisitionCenter() {
     'SUB-8942': [{ time: '10:00 AM', user: 'Auto-Scanner AI', action: 'Passed Initial Screening' }],
   });
 
-  const submissions = [
-    { id: 'SUB-8942', title: 'The Last Frontier', creator: 'Starlight Films', email: 'contact@starlight.com', type: 'Feature', status: 'Editorial Review', score: 88 },
-    { id: 'SUB-8943', title: 'Ocean Deep', creator: 'Blue Wave Docs', email: 'hello@bluewave.com', type: 'Documentary', status: 'Legal Verification', score: 92 },
-    { id: 'SUB-8945', title: 'Uncharted Waters', creator: 'Independent', email: 'indie@dev.com', type: 'Short', status: 'Technical Assessment', score: 71 },
-  ];
+  const [submissions, setSubmissions] = useState([
+    { id: 'SUB-8942', title: 'The Last Frontier', creator: 'Starlight Films', email: 'contact@starlight.com', type: 'Feature', status: 'Editorial Review', score: 88, genre: 'Action' },
+    { id: 'SUB-8943', title: 'Ocean Deep', creator: 'Blue Wave Docs', email: 'hello@bluewave.com', type: 'Documentary', status: 'Legal Verification', score: 92, genre: 'Docs' },
+    { id: 'SUB-8945', title: 'Uncharted Waters', creator: 'Independent', email: 'indie@dev.com', type: 'Short', status: 'Technical Assessment', score: 71, genre: 'Drama' },
+  ]);
 
   const handleAction = (action: 'Approved' | 'Rejected' | 'Request Revisions') => {
+    if (action === 'Approved') {
+        publishContent({
+          id: Math.floor(Math.random() * 1000000),
+          emoji: '🎬',
+          coverUrl: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=300&auto=format&fit=crop',
+          title: selectedSub.title,
+          sub: `${selectedSub.creator} • ${selectedSub.type}`,
+          tag: 'new',
+          rating: '8.5',
+          year: new Date().getFullYear(),
+          eps: null,
+          genres: [selectedSub.genre || 'Drama'],
+          desc: `Approved partner submission by ${selectedSub.creator}.`,
+          cast: [],
+          episodes: []
+        });
+        setSubmissions(prev => prev.filter(s => s.id !== selectedSub.id));
+        setSelectedSub(null);
+
+        eternaEventBus.emit('SUCCESS', `Submission '${selectedSub?.title}' has been approved and moved to Global Library.`);
+        triggerWorkflow({
+          title: "Publish Authorization Sequence",
+          endpoint: "/super-admin/acquisition/approval-center",
+          steps: [
+            "Generate Content ID",
+            "Activate Distribution Rights",
+            "Move Content → Global Library",
+            "Notify Creator & Distribution Teams",
+            "Create Audit Record",
+            "Update Content Intelligence Dashboard"
+          ]
+        });
+        return;
+    } else if (action === 'Rejected') {
+        triggerWorkflow({
+          title: "Content Rejection Workflow",
+          endpoint: "/super-admin/acquisition/review-decision",
+          steps: [
+            "Capture Rejection Reason",
+            "Generate Rejection Report",
+            "Notify Content Owner",
+            "Archive Submission",
+            "Update Compliance Logs",
+            "Update Creator Performance Metrics"
+          ]
+        });
+    } else if (action === 'Request Revisions') {
+        triggerWorkflow({
+          title: "Revision Request Sequence",
+          endpoint: "/super-admin/acquisition/revision-workspace",
+          steps: [
+            "Add Revision Notes",
+            "Tag Content Issues",
+            "Assign Reviewer",
+            "Send Revision Request",
+            "Create Revision Ticket",
+            "Track SLA"
+          ]
+        });
+    }
+
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setAuditLogs((prev: any) => ({
       ...prev,
@@ -238,11 +371,6 @@ function AcquisitionCenter() {
         ...(prev[selectedSub.id] || [])
       ]
     }));
-    if (action === 'Rejected' || action === 'Request Revisions') {
-      showToast(`Automated email sent to ${selectedSub.email} regarding: ${action}`);
-    } else {
-      showToast(`${selectedSub.title} approved and scheduled for publish!`);
-    }
     setShowRejectReason(false);
   };
 
@@ -355,9 +483,33 @@ function CheckItem({ label, pass }: any) {
   );
 }
 
-function LibraryManagement() {
-  const { showToast } = useAppStore();
+function LibraryManagement({ triggerWorkflow }: any) {
+  const { showToast, publishContent, catalog } = useAppStore();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showDirectPublishModal, setShowDirectPublishModal] = useState(false);
+  const [directTitle, setDirectTitle] = useState("");
+  const [directGenre, setDirectGenre] = useState("Drama");
+
+  const handleDirectPublish = () => {
+    if (!directTitle.trim()) return;
+    publishContent({
+      id: Math.floor(Math.random() * 1000000),
+      emoji: '🎬',
+      coverUrl: 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=300&auto=format&fit=crop',
+      title: directTitle,
+      sub: `Super Admin Direct Publish`,
+      tag: 'new',
+      rating: '9.9',
+      year: new Date().getFullYear(),
+      eps: null,
+      genres: [directGenre],
+      desc: 'Directly published by Super Administrator via Central Command.',
+      cast: [],
+      episodes: []
+    });
+    setDirectTitle('');
+    setShowDirectPublishModal(false);
+  };
   
   const tempLibrary = [
     { id: '1', title: 'Stranger Things', creator: 'Netflix Originals', views: '1.2B', status: 'Published', expiry: 'Perpetual' },
@@ -375,16 +527,142 @@ function LibraryManagement() {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
+  const handleUnpublishQueue = () => {
+     triggerWorkflow({
+        title: "Unpublish & Governance Queue",
+        endpoint: "/library/governance/unpublish-queue",
+        steps: [
+          "Remove from Search Index",
+          "Remove from Recommendations",
+          "Deactivate Streaming & DRM",
+          "Notify Rights Holders",
+          "Update DRM Registry"
+        ]
+     });
+  };
+
   const handleBulkAction = (action: string) => {
     if (selectedIds.length === 0) return;
-    showToast(`Bulk action '${action}' applied to ${selectedIds.length} items.`);
+    
+    if (action === 'Publish') {
+       triggerWorkflow({
+          title: "Bulk Publishing Engine",
+          endpoint: "/library/bulk-publishing-center",
+          steps: [
+             "Select Territories & Release Date",
+             "Select Distribution Channels",
+             "Rebuild Search Index",
+             "Trigger CDN Distribution",
+             "Update Content Intelligence",
+          ]
+       });
+    } else if (action === 'Delete') {
+       triggerWorkflow({
+          title: "Content Retirement Center",
+          endpoint: "/administration/content-retirement-center",
+          steps: [
+             "Archive Check",
+             "Legal Validation",
+             "Delete Approval",
+             "Execute Removal",
+             "Create Audit Log"
+          ]
+       });
+    }
     setSelectedIds([]);
+  };
+
+  const handleSingleAction = (action: string, id: string) => {
+    if (action === 'Edit') {
+       triggerWorkflow({
+          title: "Content Editor Workspace",
+          endpoint: `/library/content-editor/${id}`,
+          steps: [
+            "Open Metadata Schema",
+            "Load DRM Profiles",
+            "Fetch Localization Rules",
+            "Initialize Rights Workspace"
+          ]
+       });
+    } else if (action === 'Archive') {
+       triggerWorkflow({
+          title: "Archive Manager Pipeline",
+          endpoint: "/library/archive-manager",
+          steps: [
+            "Archive Request",
+            "Rights Validation",
+            "Storage Migration",
+            "Update Library Count",
+            "Content Archived"
+          ]
+       });
+    }
   };
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300">
-      <h1 className="text-3xl font-bold mb-2">Global Library, DRM & Lifecycle</h1>
-      <p className="text-white/50 mb-8">Manage active assets, digital rights security, and licensing expirations.</p>
+      <div className="flex justify-between items-end mb-8">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Global Library, DRM & Lifecycle</h1>
+          <p className="text-white/50">Manage active assets, digital rights security, and licensing expirations.</p>
+        </div>
+        <button 
+          onClick={() => setShowDirectPublishModal(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+        >
+           <Upload className="w-5 h-5" /> Direct Publish (VIP)
+        </button>
+      </div>
+
+      {showDirectPublishModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#111] border border-white/10 rounded-xl p-6 w-full max-w-md shadow-2xl relative">
+            <button onClick={() => setShowDirectPublishModal(false)} className="absolute top-4 right-4 text-white/50 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Upload className="w-5 h-5 text-blue-400"/> Publish Content Instantly</h2>
+            <p className="text-white/50 text-sm mb-6">This circumvents normal approval workflows. Content will be immediately available to all users.</p>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-2">Content Title</label>
+                <input 
+                  type="text" 
+                  autoFocus
+                  placeholder="e.g. Eterna Spotlight"
+                  className="w-full bg-[#222] border border-white/10 rounded-lg px-4 py-3 outline-none focus:border-blue-500 transition-colors"
+                  value={directTitle}
+                  onChange={(e) => setDirectTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleDirectPublish()}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-2">Primary Genre</label>
+                <select 
+                  className="w-full bg-[#222] border border-white/10 rounded-lg px-4 py-3 outline-none focus:border-blue-500 transition-colors"
+                  value={directGenre}
+                  onChange={(e) => setDirectGenre(e.target.value)}
+                >
+                  <option>Drama</option>
+                  <option>Action</option>
+                  <option>Sci-Fi</option>
+                  <option>Documentary</option>
+                  <option>Comedy</option>
+                  <option>Sports</option>
+                </select>
+              </div>
+            </div>
+            
+            <button 
+              onClick={handleDirectPublish}
+              disabled={!directTitle.trim()}
+              className="w-full bg-blue-600 disabled:opacity-50 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition-colors"
+            >
+              Push to Live Platform
+            </button>
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-[#111] p-5 rounded-xl border border-white/5">
@@ -399,7 +677,7 @@ function LibraryManagement() {
           <div className="flex items-center gap-2 text-white/50 mb-4 font-semibold uppercase text-[11px] tracking-wider"><Clock className="w-4 h-4"/> Content Lifecycle Engine</div>
           <div className="text-[14px]">
              <p className="text-yellow-400 mb-2 font-medium">12 Licenses expiring in the next 30 days.</p>
-             <button className="text-[12px] bg-white/10 px-3 py-1.5 rounded hover:bg-white/20 transition-colors">Review & Unpublish Queue</button>
+             <button onClick={handleUnpublishQueue} className="text-[12px] bg-white/10 px-3 py-1.5 rounded hover:bg-white/20 transition-colors">Review & Unpublish Queue</button>
           </div>
         </div>
         <div className="bg-[#111] p-5 rounded-xl border border-white/5">
@@ -446,8 +724,8 @@ function LibraryManagement() {
                 <td className="p-4 font-mono text-white/70">{item.views}</td>
                 <td className="p-4"><span className={`px-2 py-1 rounded text-[11px] uppercase tracking-wider font-bold ${item.status === 'Published' ? 'text-green-400 bg-green-400/10' : 'text-white/40 bg-white/10'}`}>{item.status}</span></td>
                 <td className="p-4 text-right flex justify-end gap-3 text-white/50 mt-1">
-                   <button className="hover:text-white">Edit</button>
-                   <button className="hover:text-eterna-red">Archive</button>
+                   <button onClick={() => handleSingleAction('Edit', item.id)} className="hover:text-white">Edit</button>
+                   <button onClick={() => handleSingleAction('Archive', item.id)} className="hover:text-eterna-red">Archive</button>
                 </td>
               </tr>
             ))}
@@ -458,7 +736,48 @@ function LibraryManagement() {
   );
 }
 
-function CreatorManagement() {
+function CreatorManagement({ triggerWorkflow }: any) {
+  const [board, setBoard] = useState({
+    'Concept & Scripting': ['Sci-Fi Epic (Project Echo)', 'African Safari Doc S2'],
+    'Pre-Production (Budgets)': ['Comedy Special 24', 'Eterna Tech Series'],
+    'Principal Photography': ['Neon Nights S2'],
+    'Post-Production (VFX)': ['The Last Frontier'],
+    'Ready for Release': ['Cosmic Voyage Origin']
+  });
+
+  const handleDrop = (e: React.DragEvent, col: string) => {
+    e.preventDefault();
+    const item = e.dataTransfer.getData('text/plain');
+    if (!item) return;
+    
+    // Check if dragging to a different column
+    let sourceCol = '';
+    Object.entries(board).forEach(([k, v]) => {
+       if ((v as string[]).includes(item)) sourceCol = k;
+    });
+    
+    if (sourceCol && sourceCol !== col) {
+       setBoard(prev => {
+          const next = { ...prev };
+          next[sourceCol as keyof typeof board] = next[sourceCol as keyof typeof board].filter(i => i !== item);
+          next[col as keyof typeof board] = [...next[col as keyof typeof board], item];
+          return next;
+       });
+       
+       triggerWorkflow({
+          title: "Production Pipeline Update",
+          endpoint: "/studio/production-board",
+          steps: [
+            `Move "${item}" to ${col}`,
+            "Update Production Database",
+            "Notify Assigned Teams",
+            "Update Budget Forecast",
+            "Update Timeline & Executive Dashboard"
+          ]
+       });
+    }
+  };
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300">
       <h1 className="text-3xl font-bold mb-2">Original Productions & Studio Portal</h1>
@@ -471,69 +790,232 @@ function CreatorManagement() {
       </div>
 
       <div className="bg-[#111] border border-white/5 p-6 rounded-xl overflow-x-auto">
-        <h2 className="text-xl font-bold mb-6">Original Content Pipeline (Kanban)</h2>
+        <h2 className="text-xl font-bold mb-6">Original Content Pipeline (Drag & Drop)</h2>
         <div className="flex gap-4 min-w-[1000px] pb-4">
-           <KanbanColumn title="Concept & Scripting" items={['Sci-Fi Epic (Project Echo)', 'African Safari Doc S2']} />
-           <KanbanColumn title="Pre-Production (Budgets)" items={['Comedy Special 24', 'Eterna Tech Series']} />
-           <KanbanColumn title="Principal Photography" items={['Neon Nights S2']} />
-           <KanbanColumn title="Post-Production (VFX)" items={['The Last Frontier']} />
-           <KanbanColumn title="Ready for Release" items={['Cosmic Voyage Origin']} />
+           {Object.entries(board).map(([title, items]) => (
+              <KanbanColumn key={title} title={title} items={items} onDrop={(e: any) => handleDrop(e, title)} />
+           ))}
         </div>
       </div>
     </div>
   );
 }
 
-function KanbanColumn({ title, items }: any) {
+function KanbanColumn({ title, items, onDrop }: any) {
   return (
-    <div className="flex-1 min-w-[250px] bg-[#0a0a0a] rounded-lg border border-white/10 p-3">
+    <div 
+      className="flex-1 min-w-[250px] bg-[#0a0a0a] rounded-lg border border-white/10 p-3 flex flex-col"
+      onDragOver={e => e.preventDefault()}
+      onDrop={onDrop}
+    >
        <div className="text-[12px] font-bold text-white/50 uppercase tracking-wider mb-4 border-b border-white/10 pb-2">{title}</div>
-       <div className="space-y-2">
+       <div className="space-y-2 flex-1 relative">
          {items.map((it: string, i: number) => (
-            <div key={i} className="bg-[#1a1a1a] border border-white/5 p-3 rounded shadow-lg text-[13px] font-medium hover:border-eterna-red transition-colors cursor-pointer">
+            <div 
+              key={i} 
+              draggable 
+              onDragStart={e => e.dataTransfer.setData('text/plain', it)}
+              className="bg-[#1a1a1a] border border-white/5 p-3 rounded shadow-lg text-[13px] font-medium hover:border-eterna-red focus:border-eterna-red transition-colors cursor-grab active:cursor-grabbing transform active:scale-95 duration-100"
+            >
               {it}
             </div>
          ))}
+         {items.length === 0 && <div className="absolute inset-0 flex items-center justify-center text-[11px] text-white/20 font-bold uppercase tracking-widest border border-dashed border-white/10 rounded">Drop Here</div>}
        </div>
     </div>
   );
 }
 
-function Marketplace() {
+function Marketplace({ triggerWorkflow }: any) {
+  const [showBidModal, setShowBidModal] = useState(false);
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300">
       <h1 className="text-3xl font-bold mb-2">Marketplace Ecosystem</h1>
       <p className="text-white/50 mb-8">B2B portal for film licensing, script sales, and production equipment rentals.</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-[#111] p-6 rounded-xl border border-white/5 flex flex-col items-center justify-center min-h-[250px] text-center">
-          <FileCheck className="w-10 h-10 text-white/30 mb-4" />
-          <h3 className="font-bold text-[18px] mb-2">Film Licensing Rights</h3>
-          <p className="text-[13px] text-white/50 mb-4">Manage territorial syndication and external distribution bids.</p>
-          <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-[13px]">View 12 Open Bids</button>
+           <FileCheck className="w-10 h-10 text-white/30 mb-4" />
+           <h3 className="font-bold text-[18px] mb-2">Film Licensing Rights</h3>
+           <p className="text-[13px] text-white/50 mb-4">Manage territorial syndication and external distribution bids.</p>
+           <button onClick={() => setShowBidModal(true)} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-[13px]">View 12 Open Bids</button>
         </div>
         <div className="bg-[#111] p-6 rounded-xl border border-white/5 flex flex-col items-center justify-center min-h-[250px] text-center">
-          <BookOpenIcon className="w-10 h-10 text-white/30 mb-4" />
-          <h3 className="font-bold text-[18px] mb-2">Script Sales Hub</h3>
-          <p className="text-[13px] text-white/50 mb-4">Connect vetted screenwriters with partner production studios.</p>
-          <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-[13px]">Review Scripts</button>
+           <BookOpenIcon className="w-10 h-10 text-white/30 mb-4" />
+           <h3 className="font-bold text-[18px] mb-2">Script Sales Hub</h3>
+           <p className="text-[13px] text-white/50 mb-4">Connect vetted screenwriters with partner production studios.</p>
+           <button onClick={() => triggerWorkflow({
+              title: "Script Marketplace",
+              endpoint: "/studio/script-marketplace",
+              steps: [
+                "Run AI Script Analysis",
+                "Match Genre & Production Readiness",
+                "Notify Writers & Studios",
+                "Prepare Deal Room"
+              ]
+           })} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-[13px]">Review Scripts</button>
         </div>
         <div className="bg-[#111] p-6 rounded-xl border border-white/5 flex flex-col items-center justify-center min-h-[250px] text-center">
-          <Video className="w-10 h-10 text-white/30 mb-4" />
-          <h3 className="font-bold text-[18px] mb-2">Equipment Workflow</h3>
-          <p className="text-[13px] text-white/50 mb-4">Internal ARRI/RED camera rentals and set equipment deployment.</p>
-          <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-[13px]">Logistics Dashboard</button>
+           <Video className="w-10 h-10 text-white/30 mb-4" />
+           <h3 className="font-bold text-[18px] mb-2">Equipment Workflow</h3>
+           <p className="text-[13px] text-white/50 mb-4">Internal ARRI/RED camera rentals and set equipment deployment.</p>
+           <button onClick={() => triggerWorkflow({
+              title: "Logistics Dashboard",
+              endpoint: "/studio/equipment-logistics",
+              steps: [
+                "Track Camera Inventory",
+                "Generate Dispatch Order",
+                "Update Production Finance",
+                "Schedule Maintenance"
+              ]
+           })} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-[13px]">Logistics Dashboard</button>
+        </div>
+      </div>
+      {showBidModal && <BidsModal onClose={() => setShowBidModal(false)} triggerWorkflow={triggerWorkflow} />}
+    </div>
+  );
+}
+
+function BidsModal({ onClose, triggerWorkflow }: any) {
+  const [loading, setLoading] = useState(false);
+  const [agreement, setAgreement] = useState('');
+  
+  const partnerCountry = "France (EU)";
+  const saJurisdiction = "South Africa (ZA)";
+
+  const handleGenerate = async () => {
+    setLoading(true);
+    triggerWorkflow({
+       title: "AI Licensing Generation",
+       endpoint: "/api/gemini/generate-license",
+       steps: [
+         "Resolve Jurisdiction Conflicts (ZA vs EU)",
+         "Compile Payment Clauses",
+         "Draft Agreement",
+         "Dispatch for e-Signature"
+       ]
+    });
+    
+    try {
+      const res = await fetch("/api/gemini/generate-license", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          metadata: { title: "Cosmic Voyage", rights: "SVOD France", duration: "3 Years", offer: "€850,000" },
+          partnerCountry: partnerCountry,
+          saJurisdiction: saJurisdiction
+        })
+      });
+      const data = await res.json();
+      setAgreement(data.agreement);
+      eternaEventBus.emit('SUCCESS', `AI License Agreement generated for ${partnerCountry} and sent to partner.`);
+    } catch (e) {
+      console.error(e);
+      eternaEventBus.emit('ERROR', `Failed to generate AI License Agreement.`);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur z-50 flex items-center justify-center p-4">
+       <div className="bg-[#111] border border-white/10 w-[800px] h-[600px] rounded-xl flex flex-col">
+          <div className="p-4 border-b border-white/10 flex justify-between items-center">
+            <h2 className="font-bold text-lg">Open Bid: 'Cosmic Voyage'</h2>
+            <button onClick={onClose}><XCircle className="w-5 h-5 text-white/50 hover:text-white" /></button>
+          </div>
+          <div className="flex-1 p-6 flex flex-col">
+             <div className="flex justify-between items-center bg-[#1a1a1a] p-4 rounded-lg border border-white/5 mb-4">
+                <div>
+                  <div className="font-bold mb-1">CineStream Europe</div>
+                  <div className="text-[13px] text-white/50">Territory: {partnerCountry} • Offer: €850,000</div>
+                </div>
+                <button onClick={handleGenerate} disabled={loading} className="px-4 py-2 bg-eterna-red rounded font-bold hover:bg-red-600 disabled:opacity-50">
+                  {loading ? 'Generating AI Agreement...' : 'Generate AI Agreement (ZA-EU)'}
+                </button>
+             </div>
+             <div className="flex-1 bg-[#050505] rounded border border-white/10 p-4 overflow-y-auto font-mono text-[11px] text-white/70 whitespace-pre-wrap">
+                {agreement || "Click 'Generate AI Agreement' to draft the multi-jurisdiction licensing contract..."}
+             </div>
+          </div>
+       </div>
+    </div>
+  );
+}
+
+const BookOpenIcon = ({className}:any) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>;
+
+function SuperAdminWorkflowModal({ details, onClose }: { details: any, onClose: () => void }) {
+  const [step, setStep] = useState(0);
+
+  React.useEffect(() => {
+    if (step < details.steps.length) {
+      const t = setTimeout(() => {
+        setStep(s => s + 1);
+      }, 1000 + Math.random() * 500);
+      return () => clearTimeout(t);
+    }
+  }, [step, details.steps.length]);
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur z-50 flex items-center justify-center p-4 animate-in fade-in">
+      <div className="bg-[#0f0f0f] border border-white/10 w-full max-w-xl rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#1a1a1a]">
+          <div className="flex items-center gap-3">
+             <Activity className="w-5 h-5 text-eterna-red" />
+             <div className="font-bold text-[15px]">{details.title}</div>
+          </div>
+          <button onClick={onClose} className="text-white/50 hover:text-white transition-colors">
+            <XCircle className="w-6 h-6" />
+          </button>
+        </div>
+        
+        <div className="p-8">
+           <div className="mb-6">
+              <div className="text-[11px] font-bold text-white/40 uppercase tracking-widest mb-1">Target Endpoint</div>
+              <div className="font-mono text-[13px] text-blue-400 bg-blue-400/10 p-2 rounded border border-blue-400/20">{details.endpoint}</div>
+           </div>
+           
+           <div className="space-y-4 mb-8">
+              <div className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Enterprise Event Bus Execution</div>
+              {details.steps.map((s: string, i: number) => {
+                 const isActive = step === i;
+                 const isDone = step > i;
+                 return (
+                   <div key={i} className={`flex items-start gap-4 transition-all duration-300 ${isActive ? 'opacity-100 scale-100' : isDone ? 'opacity-60 scale-100' : 'opacity-0 scale-95'}`}>
+                      <div className={`mt-1 w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${isDone ? 'bg-green-500/20 text-green-400' : isActive ? 'bg-eterna-red/20 text-eterna-red animate-pulse' : 'bg-white/5 text-white/20'}`}>
+                         {isDone ? <CheckCircle2 className="w-4 h-4" /> : isActive ? <SettingsIcon className="w-4 h-4 animate-spin-slow" /> : <div className="w-2 h-2 rounded-full bg-white/20" />}
+                      </div>
+                      <div className={`text-[14px] ${isDone ? 'text-white' : isActive ? 'text-white font-bold' : 'text-white/40'}`}>
+                        {s}
+                      </div>
+                   </div>
+                 );
+              })}
+           </div>
+           
+           {step >= details.steps.length && (
+              <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-xl text-center animate-in zoom-in slide-in-from-bottom-4">
+                 <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-2" />
+                 <div className="font-bold text-lg text-green-400 mb-1">Workflow Completed</div>
+                 <div className="text-[13px] text-green-400/70 mb-4">All downstream systems have been updated and synchronized.</div>
+                 <button onClick={onClose} className="bg-green-500 hover:bg-green-400 text-black font-bold px-8 py-2.5 rounded-lg transition-colors">Acknowledge</button>
+              </div>
+           )}
         </div>
       </div>
     </div>
   );
 }
-const BookOpenIcon = ({className}:any) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>;
+
+function SettingsIcon({className}:any) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
+}
 
 // ----------------------------------------------------
 // AUDIENCE & OPERATIONS
 // ----------------------------------------------------
 
-function AudienceIntelligence() {
+function AudienceIntelligence({ triggerWorkflow }: any) {
   const [variants, setVariants] = useState([
     { id: 1, name: 'Variant A', ctr: 30, url: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=300&auto=format&fit=crop' },
     { id: 2, name: 'Variant B', ctr: 70, url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=300&auto=format&fit=crop' }
@@ -569,7 +1051,16 @@ function AudienceIntelligence() {
                 </div>
                 <div className="text-right">
                    <div className="font-bold text-[18px]">42,108 users</div>
-                   <button className="text-[11px] bg-red-600 hover:bg-red-700 font-bold px-3 py-1.5 rounded mt-2 transition-colors">Trigger 50% Off Retention Campaign</button>
+                   <button onClick={() => triggerWorkflow({
+                      title: "Retention Campaign Engine",
+                      endpoint: "/intelligence/churn-prevention",
+                      steps: [
+                        "Query At-Risk Users (42,108)",
+                        "Generate 50% Off Offer Code",
+                        "Launch Retention Campaign",
+                        "Queue Email & Push Notifications"
+                      ]
+                   })} className="text-[11px] bg-red-600 hover:bg-red-700 font-bold px-3 py-1.5 rounded mt-2 transition-colors">Trigger 50% Off Retention Campaign</button>
                 </div>
              </div>
              <div className="flex justify-between items-center p-4 bg-[#1a1a1a] border border-white/5 rounded-lg border-l-4 border-l-yellow-500">
@@ -579,7 +1070,16 @@ function AudienceIntelligence() {
                 </div>
                 <div className="text-right">
                    <div className="font-bold text-[18px]">115,402 users</div>
-                   <button className="text-[11px] bg-white/10 hover:bg-white/20 font-bold px-3 py-1.5 rounded mt-2 transition-colors">Send Personalized Recs Email</button>
+                   <button onClick={() => triggerWorkflow({
+                      title: "Predictive Recommendation Engine",
+                      endpoint: "/intelligence/recommendation-engine",
+                      steps: [
+                        "Select Audience Segment (115k)",
+                        "Generate AI Recommendations",
+                        "Build Dynamic Email Layouts",
+                        "Launch Predictive Campaign"
+                      ]
+                   })} className="text-[11px] bg-white/10 hover:bg-white/20 font-bold px-3 py-1.5 rounded mt-2 transition-colors">Send Personalized Recs Email</button>
                 </div>
              </div>
           </div>
@@ -642,10 +1142,23 @@ function AudienceIntelligence() {
   );
 }
 
-function AdManagement() {
+function AdManagement({ triggerWorkflow }: any) {
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300">
-      <h1 className="text-3xl font-bold mb-2">Advertising Management (AVOD)</h1>
+      <div className="flex justify-between items-start mb-2">
+         <h1 className="text-3xl font-bold">Advertising Management (AVOD)</h1>
+         <button onClick={() => triggerWorkflow({
+            title: "Advertising Command Center",
+            endpoint: "/advertising/command-center",
+            steps: [
+              "Create Campaign: Video/Banner",
+              "Set Media Placements",
+              "Define Audience Targeting",
+              "Schedule & Launch",
+              "Activate Real-Time Optimization Alerts"
+            ]
+         })} className="bg-white text-black font-bold px-4 py-2 rounded-lg text-sm hover:bg-white/90">Launch Command Center</button>
+      </div>
       <p className="text-white/50 mb-8">Manage ad inventory, campaigns, and audience targeting for the AVOD tier.</p>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -689,7 +1202,7 @@ function AdManagement() {
   );
 }
 
-function StreamingOperations() {
+function StreamingOperations({ triggerWorkflow }: any) {
   const cdnData = [
     { time: '10:00', bandwidth: 42.1, buffer: 0.5, viewers: 1.10 },
     { time: '10:05', bandwidth: 45.3, buffer: 0.4, viewers: 1.15 },
@@ -748,17 +1261,44 @@ function StreamingOperations() {
             <h2 className="text-xl font-bold">Multi-CDN Edge Routing</h2>
           </div>
           <div className="space-y-3">
-             <div className="flex justify-between items-center p-3 border border-white/10 rounded bg-[#1a1a1a]">
+             <div className="flex justify-between items-center p-3 border border-white/10 hover:border-eterna-red transition-colors cursor-pointer rounded bg-[#1a1a1a]" onClick={() => triggerWorkflow({
+                title: "CDN Edge Configuration",
+                endpoint: "/streaming/edge-routing",
+                steps: [
+                   "Authenticate Infrastructure API",
+                   "Modify CloudFront BGP Routes",
+                   "Purge Global Edge Cache",
+                   "Verify Telemetry Metrics"
+                ]
+             })}>
                <div className="font-bold text-[14px]">AWS CloudFront <span className="text-[11px] font-normal text-white/50 ml-2">Primary Node</span></div>
-               <div className="w-10 h-5 bg-green-500 rounded-full flex items-center justify-end p-0.5"><div className="w-4 h-4 bg-white rounded-full"></div></div>
+               <div className="w-10 h-5 bg-green-500 rounded-full flex items-center justify-end p-0.5"><div className="w-4 h-4 bg-white rounded-full shadow"></div></div>
              </div>
-             <div className="flex justify-between items-center p-3 border border-white/10 rounded bg-[#1a1a1a]">
+             <div className="flex justify-between items-center p-3 border border-white/10 hover:border-eterna-red transition-colors cursor-pointer rounded bg-[#1a1a1a]" onClick={() => triggerWorkflow({
+                title: "CDN Edge Configuration",
+                endpoint: "/streaming/edge-routing",
+                steps: [
+                   "Authenticate Infrastructure API",
+                   "Update Cloudflare Enterprise rules",
+                   "Propagate DNS Records",
+                   "Verify Telemetry Metrics"
+                ]
+             })}>
                <div className="font-bold text-[14px]">Cloudflare Enterprise <span className="text-[11px] font-normal text-white/50 ml-2">Edge Rules</span></div>
-               <div className="w-10 h-5 bg-green-500 rounded-full flex items-center justify-end p-0.5"><div className="w-4 h-4 bg-white rounded-full"></div></div>
+               <div className="w-10 h-5 bg-green-500 rounded-full flex items-center justify-end p-0.5"><div className="w-4 h-4 bg-white rounded-full shadow"></div></div>
              </div>
-             <div className="flex justify-between items-center p-3 border border-white/10 rounded bg-[#1a1a1a]">
+             <div className="flex justify-between items-center p-3 border border-white/10 hover:border-eterna-red transition-colors cursor-pointer rounded bg-[#1a1a1a]" onClick={() => triggerWorkflow({
+                title: "CDN Edge Configuration",
+                endpoint: "/streaming/edge-routing",
+                steps: [
+                   "Authenticate Infrastructure API",
+                   "Enable Akamai Fallback Node",
+                   "Warming Edge Caches",
+                   "Verify Telemetry Metrics"
+                ]
+             })}>
                <div className="font-bold text-[14px]">Akamai <span className="text-[11px] font-normal text-white/50 ml-2">Fallback Node</span></div>
-               <div className="w-10 h-5 bg-white/20 rounded-full flex items-center justify-start p-0.5"><div className="w-4 h-4 bg-white rounded-full"></div></div>
+               <div className="w-10 h-5 bg-white/20 rounded-full flex items-center justify-start p-0.5"><div className="w-4 h-4 bg-white rounded-full shadow"></div></div>
              </div>
           </div>
         </div>
@@ -792,50 +1332,152 @@ function StreamingOperations() {
   );
 }
 
-function ModerationCenter() {
+function AuditHeatmap() {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const data = Array.from({ length: 90 }, (_, i) => ({
+      date: new Date(Date.now() - i * 24 * 60 * 60 * 1000),
+      value: Math.floor(Math.random() * 50)
+    })).reverse();
+
+    d3.select(containerRef.current).selectAll('*').remove();
+
+    const margin = { top: 10, right: 10, bottom: 20, left: 30 };
+    const width = containerRef.current.clientWidth - margin.left - margin.right;
+    const height = 120 - margin.top - margin.bottom;
+
+    const svg = d3.select(containerRef.current)
+      .append('svg')
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom)
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleTime()
+      .domain(d3.extent(data, d => d.date) as [Date, Date])
+      .range([0, width]);
+
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d.value) as number])
+      .range([height, 0]);
+
+    const line = d3.area<{ date: Date, value: number }>()
+      .x(d => x(d.date))
+      .y0(height)
+      .y1(d => y(d.value))
+      .curve(d3.curveMonotoneX);
+
+    svg.append('path')
+      .datum(data)
+      .attr('fill', 'rgba(229, 9, 20, 0.2)')
+      .attr('stroke', '#E50914')
+      .attr('stroke-width', 2)
+      .attr('d', line);
+
+    const xAxis = d3.axisBottom(x).ticks(5).tickFormat((d) => d3.timeFormat("%b %d")(d as Date));
+    svg.append('g')
+      .attr('transform', `translate(0,${height})`)
+      .call(xAxis)
+      .selectAll('text')
+      .attr('fill', '#666');
+
+  }, []);
+
+  return (
+    <div className="bg-[#111] border border-white/5 rounded-xl p-6 mb-6">
+       <h3 className="font-bold mb-4 text-white/80">Compliance & Audit Activity (90 Days)</h3>
+       <div ref={containerRef} className="w-full h-[120px]" />
+    </div>
+  );
+}
+
+function ModerationCenter({ triggerWorkflow }: any) {
+  const [logs, setLogs] = useState([
+    { ts: '2026-06-03 12:15:02', admin: 'Super Admin (simao@neuro...)', action: "Approved submission 'The Last Frontier'", module: 'Acquisition', status: 'Success' },
+    { ts: '2026-06-03 11:42:18', admin: 'Auto-Expire Lifecycle Bot', action: "Archived 'Legacy Series' due to license expiry", module: 'Library', status: 'Success' },
+    { ts: '2026-06-03 10:20:00', admin: 'Billing Engine Server', action: "Processed 42,000 monthly subscriber renewals", module: 'Monetization', status: 'Success' },
+    { ts: '2026-06-03 09:12:33', admin: 'Legal Moderator (John D.)', action: "Processed DMCA Takedown Notice ID #84992", module: 'Compliance', status: 'Success' }
+  ]);
+
+  const handleExport = (format: 'csv' | 'json') => {
+    // Audit Log Entry
+    const newLog = {
+      ts: new Date().toISOString().replace('T', ' ').substr(0, 19),
+      admin: 'Super Admin (current)',
+      action: `Exported Compliance Report (${format.toUpperCase()})`,
+      module: 'Compliance',
+      status: 'Success'
+    };
+    
+    setLogs(prev => [newLog, ...prev]);
+    eternaEventBus.emit('SUCCESS', `Compliance Report Exported as ${format.toUpperCase()}`);
+
+    // Generate File
+    const filename = `Compliance_Report_${Date.now()}.${format}`;
+    let dataStr = '';
+    
+    if (format === 'csv') {
+      const headers = Object.keys(logs[0]).join(',');
+      const rows = [newLog, ...logs].map(row => Object.values(row).map(v => `"${v}"`).join(','));
+      dataStr = [headers, ...rows].join('\n');
+    } else {
+      dataStr = JSON.stringify([newLog, ...logs], null, 2);
+    }
+    
+    const blob = new Blob([dataStr], { type: format === 'json' ? 'application/json' : 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    triggerWorkflow({
+       title: "Compliance Export Sequence",
+       endpoint: "/compliance/export-center",
+       steps: [
+         "Select Data Range & Dataset",
+         "Generate Audit Report",
+         "Encrypt Output File (AES-256)",
+         "Store Compliance Export Record",
+         "Initiate Download"
+       ]
+    });
+  };
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300">
       <h1 className="text-3xl font-bold mb-2">Enterprise Audit & Compliance</h1>
       <p className="text-white/50 mb-8">Role-based auditing, GDPR/POPIA tracking, and legal DMCA governance logs.</p>
       
+      <AuditHeatmap />
+      
       <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden mt-4">
         <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#1a1a1a]">
            <div className="font-bold text-[14px]">System-Wide Action Log</div>
-           <button className="px-4 py-1.5 bg-white/10 rounded text-[12px] font-semibold hover:bg-white/20">Export CSV</button>
+           <div className="flex gap-2">
+             <button onClick={() => handleExport('csv')} className="px-4 py-1.5 bg-white/10 rounded text-[12px] font-semibold hover:bg-white/20">Export CSV</button>
+             <button onClick={() => handleExport('json')} className="px-4 py-1.5 bg-white/10 rounded text-[12px] font-semibold hover:bg-white/20">Export JSON</button>
+           </div>
         </div>
         <table className="w-full text-left text-[13px]">
           <thead className="bg-[#141414] text-white/50 font-medium">
             <tr><th className="p-4">Timestamp</th><th className="p-4">Admin/System Entity</th><th className="p-4">Action Taken</th><th className="p-4">Module</th><th className="p-4">Status</th></tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            <tr className="hover:bg-white/5 transition-colors">
-              <td className="p-4 font-mono text-white/50">2026-06-03 12:15:02</td>
-              <td className="p-4 font-bold text-eterna-red">Super Admin (simao@neuro...)</td>
-              <td className="p-4">Approved submission 'The Last Frontier'</td>
-              <td className="p-4"><span className="bg-[#222] px-2 py-1 rounded">Acquisition</span></td>
-              <td className="p-4 text-green-400 font-bold">Success</td>
-            </tr>
-            <tr className="hover:bg-white/5 transition-colors">
-              <td className="p-4 font-mono text-white/50">2026-06-03 11:42:18</td>
-              <td className="p-4 font-bold">Auto-Expire Lifecycle Bot</td>
-              <td className="p-4">Archived 'Legacy Series' due to license expiry</td>
-              <td className="p-4"><span className="bg-[#222] px-2 py-1 rounded">Library</span></td>
-              <td className="p-4 text-green-400 font-bold">Success</td>
-            </tr>
-            <tr className="hover:bg-white/5 transition-colors">
-              <td className="p-4 font-mono text-white/50">2026-06-03 10:20:00</td>
-              <td className="p-4 font-bold">Billing Engine Server</td>
-              <td className="p-4">Processed 42,000 monthly subscriber renewals</td>
-              <td className="p-4"><span className="bg-[#222] px-2 py-1 rounded">Monetization</span></td>
-              <td className="p-4 text-green-400 font-bold">Success</td>
-            </tr>
-            <tr className="hover:bg-white/5 transition-colors">
-              <td className="p-4 font-mono text-white/50">2026-06-03 09:12:33</td>
-              <td className="p-4 font-bold">Legal Moderator (John D.)</td>
-              <td className="p-4">Processed DMCA Takedown Notice ID #84992</td>
-              <td className="p-4"><span className="bg-[#222] px-2 py-1 rounded">Compliance</span></td>
-              <td className="p-4 text-green-400 font-bold">Success</td>
-            </tr>
+            {logs.map((log, i) => (
+              <tr key={i} className="hover:bg-white/5 transition-colors">
+                <td className="p-4 font-mono text-white/50">{log.ts}</td>
+                <td className="p-4 font-bold text-eterna-red">{log.admin}</td>
+                <td className="p-4">{log.action}</td>
+                <td className="p-4"><span className="bg-[#222] px-2 py-1 rounded">{log.module}</span></td>
+                <td className="p-4 text-green-400 font-bold">{log.status}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

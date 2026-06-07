@@ -11,8 +11,19 @@ export function AuthScreen() {
   const [name, setName] = useState('');
   const [pw, setPw] = useState('');
   const [plan, setPlan] = useState<'basic'|'std'|'prem'>('std');
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'card'|'paypal'>('card');
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvv, setCvv] = useState('');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const planPrices = {
+    basic: '$8.99/mo',
+    std: '$13.99/mo',
+    prem: '$17.99/mo'
+  };
 
   const doSignIn = async () => {
     if (!email || !pw || !email.includes('@')) {
@@ -20,23 +31,6 @@ export function AuthScreen() {
       return;
     }
     setErr('');
-
-    if (email === 'simao@neurogrowthlabs.co.za') {
-      if (pw === 'EternaShowTime2@') {
-        signIn({
-          name: 'Super Admin',
-          initials: 'SA',
-          email,
-          plan: 'Premium'
-        });
-        showToast('Welcome, Super Administrator.');
-        go('admin');
-        return;
-      } else {
-        setErr('Invalid email or password.');
-        return;
-      }
-    }
 
     if (supabase) {
       setLoading(true);
@@ -46,6 +40,22 @@ export function AuthScreen() {
         setErr(error.message);
         return;
       }
+
+      let role = 'normal';
+      if (data.session) {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.session.user.id).single();
+        if (profile && profile.role) role = profile.role;
+      }
+
+      showToast('Welcome back!');
+      if (role === 'super_admin') {
+        go('admin');
+      } else if (role === 'partner') {
+        go('partner');
+      } else {
+        go('home');
+      }
+      return;
     } else {
       const parsedName = email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim() || 'User';
       signIn({
@@ -65,16 +75,15 @@ export function AuthScreen() {
       setErr('Please fill all fields correctly.');
       return;
     }
-    setErr('');
-
-    if (email === 'simao@neurogrowthlabs.co.za') {
-      setErr('This email address is restricted.');
+    if (!showPayment) {
+      setErr('Please choose a plan to proceed.');
       return;
     }
+    setErr('');
 
     if (supabase) {
       setLoading(true);
-      const { error } = await supabase.auth.signUp({
+      const { error, data } = await supabase.auth.signUp({
         email,
         password: pw,
         options: {
@@ -86,6 +95,10 @@ export function AuthScreen() {
         setErr(error.message);
         return;
       }
+
+      showToast('Account created. Please complete payment.');
+      go('billing');
+      return;
     } else {
       signIn({
         name,
@@ -95,8 +108,8 @@ export function AuthScreen() {
       });
     }
 
-    showToast('Welcome to Eterna! Enjoy 30 days free.');
-    go('home');
+    showToast('Account created. Please complete payment.');
+    go('billing');
   };
 
   const doSocial = (provider: string) => {
@@ -187,17 +200,31 @@ export function AuthScreen() {
                   <div 
                     key={p} 
                     className={`border rounded-[4px] p-[12px_8px] text-center cursor-pointer transition-all ${plan === p ? 'border-eterna-red bg-eterna-red/10' : 'border-[#8c8c8c]/40'}`}
-                    onClick={() => setPlan(p)}
+                    onClick={() => { setPlan(p); setShowPayment(true); }}
                   >
                     <div className="text-[14px] font-semibold text-white">{p === 'basic' ? 'Basic' : p === 'std' ? 'Standard' : 'Premium'}</div>
+                    <div className="text-[12px] text-[#8c8c8c] mt-1">{planPrices[p]}</div>
                   </div>
                 ))}
               </div>
 
+              {showPayment && (
+                <div className="mb-[24px] p-[16px] bg-[#222] border border-[#444] rounded-[4px] animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="text-[14px] font-bold text-white mb-[8px]">Billing Information Required</div>
+                  <p className="text-[13px] text-[#8c8c8c] mb-[12px]">You've selected the {plan === 'prem' ? 'Premium' : plan === 'std' ? 'Standard' : 'Basic'} plan. To finalize your upgrade and access premium content, you will be redirected to our secure billing portal after creating your account.</p>
+                  <div className="flex gap-2">
+                     <span className="text-[12px] bg-[#333] text-[#aaa] px-2 py-1 rounded">Visa</span>
+                     <span className="text-[12px] bg-[#333] text-[#aaa] px-2 py-1 rounded">Mastercard</span>
+                     <span className="text-[12px] bg-[#333] text-[#aaa] px-2 py-1 rounded">PayPal</span>
+                     <span className="text-[12px] bg-[#333] text-[#aaa] px-2 py-1 rounded">Stripe</span>
+                  </div>
+                </div>
+              )}
+
               {err && <div className="text-eterna-red text-[13px] mb-[16px] p-[10px_12px] bg-[#e87c03]/10 rounded-[4px]">{err}</div>}
 
               <button disabled={loading} className="w-full flex items-center justify-center gap-[7px] p-[14px] rounded-[4px] font-bold text-[16px] bg-eterna-red text-white hover:bg-eterna-rose transition-colors disabled:opacity-50" onClick={doSignUp}>
-                {loading ? 'Creating Account...' : 'Sign Up'}
+                {loading ? 'Creating Account...' : 'Continue to Billing'}
               </button>
             </div>
           )}

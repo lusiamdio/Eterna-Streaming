@@ -80,6 +80,35 @@ async function startServer() {
     }
   });
 
+  app.post("/api/gemini/generate-license", async (req, res) => {
+    try {
+      const { metadata, partnerCountry, saJurisdiction } = req.body;
+      if (!metadata) {
+        return res.status(400).json({ error: "Missing metadata" });
+      }
+
+      const prompt = `Generate a Film Licensing Agreement for the following asset. Make sure to adhere to both South African jurisdiction (${saJurisdiction}) and the Partner's country of operation jurisdiction (${partnerCountry}).
+
+Asset Details:
+Title: ${metadata.title}
+Rights: ${metadata.rights || 'Exclusive SVOD'}
+Duration: ${metadata.duration || '2 Years'}
+Offer: ${metadata.offer || '$1,200,000'}
+
+Format the output as a professional legal document in markdown. Include signature blocks and standard legal clauses for indemnification, warranties, and severability. Return ONLY the markdown.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: prompt,
+      });
+      
+      res.json({ agreement: response.text });
+    } catch (error: any) {
+      console.error("Gemini API Error (License):", error);
+      res.status(500).json({ error: error.message || "Failed to generate AI License Agreement" });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

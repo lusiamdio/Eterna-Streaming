@@ -1,13 +1,13 @@
 import React from 'react';
 import { useAppStore } from '../lib/store';
 import { TopNav, BottomNav } from '../components/Navigation';
-import { CATALOG } from '../lib/data';
+// import { CATALOG } from '../lib/data';
 import { Play, Calendar, Trash2 } from 'lucide-react';
 
 export function ScheduleScreen() {
-  const { watchlist, toggleWatchlist, go, setContent } = useAppStore();
+  const { watchlist, toggleWatchlist, go, setContent, catalog } = useAppStore();
 
-  const scheduledContent = CATALOG.filter(c => watchlist.includes(c.id));
+  const scheduledContent = catalog.filter(c => watchlist.includes(c.id));
 
   return (
     <div className="flex flex-col min-h-screen bg-eterna-bg pt-[72px]">

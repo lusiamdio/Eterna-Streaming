@@ -2,14 +2,17 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CATALOG, DOWNLOADS_INIT } from './data';
 import { Content, Download } from '../types';
 import { supabase } from './supabase';
+import { Toast } from '../components/Toast';
 
-export type ScreenType = 'landing' | 'auth' | 'home' | 'search' | 'details' | 'player' | 'live' | 'dl' | 'profile' | 'partner' | 'admin' | 'originals' | 'series' | 'documentary' | 'sports' | 'music' | 'info' | 'payment' | 'schedule' | 'director';
+export type ScreenType = 'landing' | 'auth' | 'home' | 'search' | 'details' | 'player' | 'live' | 'dl' | 'profile' | 'partner' | 'admin' | 'originals' | 'series' | 'documentary' | 'sports' | 'music' | 'info' | 'payment' | 'schedule' | 'director' | 'billing';
 
 interface User {
+  id?: string;
   name: string;
   email: string;
   plan: string;
   initials: string;
+  role?: string;
 }
 
 export interface Review {
@@ -33,15 +36,16 @@ interface AppState {
   user: User | null;
   settings: UserSettings;
   currentContent: Content;
-  myList: number[];
-  watchlist: number[];
-  liked: number[];
+  myList: (number | string)[];
+  watchlist: (number | string)[];
+  liked: (number | string)[];
   downloads: Download[];
   reviews: Review[];
   searchQ: string;
   currentGenre: string;
   toastMsg: string | null;
   currentInfoPage: string;
+  catalog: Content[];
 }
 
 interface AppContextType extends AppState {
@@ -54,14 +58,15 @@ interface AppContextType extends AppState {
   setContent: (content: Content) => void;
   setInfoPage: (page: string) => void;
   setSearch: (q: string, genre: string) => void;
-  toggleMyList: (id: number) => void;
-  toggleWatchlist: (id: number) => void;
-  toggleLiked: (id: number) => void;
+  toggleMyList: (id: number | string) => void;
+  toggleWatchlist: (id: number | string) => void;
+  toggleLiked: (id: number | string) => void;
   addDownload: (item: Download) => void;
   removeDownload: (id: string) => void;
   clearDownloads: () => void;
   updateDownloadBox: (id: string, prog: number, meta?: string) => void;
   showToast: (msg: string) => void;
+  publishContent: (c: Content) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -82,46 +87,114 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     currentGenre: 'All',
     toastMsg: null,
     currentInfoPage: '',
+    catalog: [...CATALOG],
   });
 
   const [toastTimeoutId, setToastTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+  const publishContent = async (c: Content) => {
+    if (supabase && state.user) {
+      const { data, error } = await supabase.from('content').insert([{
+        title: c.title,
+        description: c.desc,
+        cover_url: c.coverUrl,
+        content_type: 'movie', 
+        status: 'published',
+        release_year: c.year,
+        rating: c.rating,
+        genres: c.genres,
+        creator_id: state.user.id
+      }]).select('*');
+      if (!error && data && data.length > 0) {
+        const item = data[0];
+        const newC: Content = { ...c, id: item.id };
+        setState(prev => ({ ...prev, catalog: [newC, ...prev.catalog] }));
+        showToast(`Published: ${c.title} ✓`);
+      } else {
+        console.error('Failed to publish', error);
+        showToast('Error publishing.');
+      }
+    } else {
+      setState(prev => ({ ...prev, catalog: [c, ...prev.catalog] }));
+      showToast(`Published: ${c.title} ✓`);
+    }
+  };
 
   // ... (supabase check will happen below, keeping existing)
   // Need to splice in methods further down, let's just do a big replace block for the provider functions
 
 
   useEffect(() => {
+    const fetchCatalog = async () => {
+      if (!supabase) return;
+      try {
+        const { data, error } = await supabase.from('content').select('*').eq('status', 'published');
+        if (!error && data && data.length > 0) {
+          const mappedCatalog: Content[] = data.map(item => ({
+            id: item.id,
+            emoji: '🎬',
+            coverUrl: item.cover_url || 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=300&auto=format&fit=crop',
+            title: item.title,
+            sub: item.genres && item.genres.length > 0 ? item.genres.join(' ') : 'Original Content',
+            tag: 'new',
+            rating: item.rating || '8.0',
+            year: item.release_year || new Date().getFullYear(),
+            eps: item.content_type === 'series' ? 1 : null,
+            genres: item.genres || ['Drama'],
+            desc: item.description || '',
+            cast: [],
+            episodes: []
+          }));
+          setState(prev => ({ ...prev, catalog: [...mappedCatalog, ...CATALOG] }));
+        }
+      } catch (err) {
+        console.error("Error fetching catalog", err);
+      }
+    };
+    fetchCatalog();
+  }, []);
+
+  useEffect(() => {
     if (!supabase) return;
+
     
+    const fetchProfile = async (sessionUser: any) => {
+      const parsedName = sessionUser.email?.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim() || 'User';
+      let role = 'normal';
+      
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', sessionUser.id).single();
+      if (profile && profile.role) {
+        role = profile.role;
+      }
+      
+      const { data: watchData } = await supabase.from('watchlist').select('content_id').eq('user_id', sessionUser.id);
+      const userWatchlist = watchData ? watchData.map(w => w.content_id) : [];
+      
+      setState(prev => ({
+        ...prev,
+        watchlist: [...new Set([...prev.watchlist, ...userWatchlist])],
+        user: {
+          id: sessionUser.id,
+          name: sessionUser.user_metadata?.full_name || parsedName,
+          initials: (sessionUser.user_metadata?.full_name || parsedName)[0].toUpperCase(),
+          email: sessionUser.email || '',
+          plan: 'Premium',
+          role
+        }
+      }));
+    };
+
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const parsedName = session.user.email?.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim() || 'User';
-        setState(prev => ({
-          ...prev,
-          user: {
-            name: session.user.user_metadata?.full_name || parsedName,
-            initials: (session.user.user_metadata?.full_name || parsedName)[0].toUpperCase(),
-            email: session.user.email || '',
-            plan: 'Premium'
-          }
-        }));
+        fetchProfile(session.user);
       }
     });
 
     // Listen to changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const parsedName = session.user.email?.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim() || 'User';
-        setState(prev => ({
-          ...prev,
-          user: {
-            name: session.user.user_metadata?.full_name || parsedName,
-            initials: (session.user.user_metadata?.full_name || parsedName)[0].toUpperCase(),
-            email: session.user.email || '',
-            plan: 'Premium'
-          }
-        }));
+        fetchProfile(session.user);
       } else {
         setState(prev => ({ ...prev, user: null }));
       }
@@ -192,10 +265,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const setInfoPage = (page: string) => setState(prev => ({ ...prev, currentInfoPage: page }));
   const setSearch = (searchQ: string, currentGenre: string) => setState(prev => ({ ...prev, searchQ, currentGenre }));
 
-  const toggleArrayItem = (arr: number[], id: number) =>
+  const toggleArrayItem = (arr: (number|string)[], id: number|string) =>
     arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id];
 
-  const toggleMyList = (id: number) => {
+  const toggleMyList = (id: number|string) => {
     setState(prev => {
       const added = !prev.myList.includes(id);
       showToast(added ? 'Added to My List ✓' : 'Removed from My List');
@@ -203,16 +276,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const toggleWatchlist = (id: number) => {
+  const toggleWatchlist = async (id: number|string) => {
     setState(prev => {
       const added = !prev.watchlist.includes(id);
       showToast(added ? 'Added to Schedule ❤️' : 'Removed from Schedule');
       return { ...prev, watchlist: toggleArrayItem(prev.watchlist, id) };
     });
+    
+    // Attempt sync to supabase
+    if (supabase && state.user && typeof id === 'string') {
+      const added = !state.watchlist.includes(id);
+      if (added) {
+        await supabase.from('watchlist').insert([{ content_id: id, user_id: state.user.id }]);
+      } else {
+        await supabase.from('watchlist').delete().eq('content_id', id).eq('user_id', state.user.id);
+      }
+    }
+    
     go('schedule');
   };
 
-  const toggleLiked = (id: number) => {
+  const toggleLiked = (id: number|string) => {
     setState(prev => {
       const added = !prev.liked.includes(id);
       showToast(added ? 'Liked! ❤️' : 'Like removed');
@@ -220,8 +304,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const addDownload = (d: Download) => setState(prev => ({ ...prev, downloads: [...prev.downloads, d] }));
-  const removeDownload = (id: string) => setState(prev => ({ ...prev, downloads: prev.downloads.filter(x => x.id !== id) }));
+  const addDownload = (d: Download) => {
+    setState(prev => ({ ...prev, downloads: [...prev.downloads, d] }));
+    showToast('Adding to downloads ⬇️');
+  };
+  const removeDownload = (id: string) => {
+    setState(prev => ({ ...prev, downloads: prev.downloads.filter(x => x.id !== id) }));
+    showToast('Removed from downloads');
+  };
   const clearDownloads = () => setState(prev => ({ ...prev, downloads: [] }));
   
   const updateDownloadBox = (id: string, prog: number, meta?: string) => {
@@ -251,15 +341,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       clearDownloads,
       updateDownloadBox,
       showToast,
+      publishContent,
     }}>
       {children}
-      {/* Toast Overlay */}
-      <div className={`fixed bottom-[72px] left-1/2 -translate-x-1/2 bg-[#1e1e32] border border-white/15 rounded-lg px-[18px] py-[9px] text-[12px] z-[9999] whitespace-nowrap pointer-events-none transition-opacity duration-300 ${state.toastMsg ? 'opacity-100' : 'opacity-0'}`}>
-        {state.toastMsg}
-      </div>
+      <Toast message={state.toastMsg} visible={!!state.toastMsg} />
     </AppContext.Provider>
   );
 }
+
+export const useProfileSync = () => {
+  const verifyProfileSync = async (userId: string, targetRole: string) => {
+    if (!supabase) return;
+    console.log(`[ProfileSync] Verifying synchronization for user ${userId} with assigned role '${targetRole}'...`);
+    try {
+      const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
+      if (error) {
+        console.warn(`[ProfileSync] Profile not found for ${userId}. Attempting creation... Error: ${error.message}`);
+        const { error: insertError } = await supabase.from('profiles').insert([{ id: userId, role: targetRole }]);
+        if (insertError) {
+          console.error(`[ProfileSync] Failed to create profile: ${insertError.message}`);
+        } else {
+          console.log(`[ProfileSync] Recovery successful. Profile created for ${userId} with role '${targetRole}'.`);
+        }
+      } else {
+        console.log(`[ProfileSync] Profile found. Existing role: ${data.role}. Matching against intended role '${targetRole}'.`);
+        if (data.role !== targetRole) {
+           console.log(`[ProfileSync] Role mismatch. Updating role from '${data.role}' to '${targetRole}'...`);
+           await supabase.from('profiles').update({ role: targetRole }).eq('id', userId);
+        } else {
+           console.log(`[ProfileSync] Sync verified successfully. Roles match.`);
+        }
+      }
+    } catch (e: any) {
+      console.error(`[ProfileSync] Unexpected error during verification: ${e.message}`);
+    }
+  };
+
+  return { verifyProfileSync };
+};
 
 export const useAppStore = () => {
   const ctx = useContext(AppContext);

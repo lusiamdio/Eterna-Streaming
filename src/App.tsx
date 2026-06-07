@@ -13,6 +13,7 @@ import { AdminScreen } from './screens/Admin';
 import { InfoScreen } from './screens/Info';
 import React from 'react';
 import { PaymentScreen } from './screens/Payment';
+import { BillingScreen } from './screens/Billing';
 import { ScheduleScreen } from './screens/Schedule';
 import { DirectorScreen } from './screens/Director';
 import { AnimatePresence, motion } from 'motion/react';
@@ -53,6 +54,7 @@ export default function App() {
       case 'music': return <DiscoveryHub title="Music & Events" forceGenre="Music" />;
       case 'info': return <InfoScreen />;
       case 'payment': return <PaymentScreen />;
+      case 'billing': return <BillingScreen />;
       case 'schedule': return <ScheduleScreen />;
       case 'director': return <DirectorScreen />;
       default: return <LandingScreen />;

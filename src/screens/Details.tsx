@@ -1,7 +1,7 @@
 import { Play, Download, Plus, Heart, Share2, ArrowDownUp, Volume2, VolumeX, ChevronDown, ChevronUp, Users, Globe, Star } from "lucide-react";
 import { useAppStore, Review } from "../lib/store";
 import { TopNav, BottomNav } from "../components/Navigation";
-import { CATALOG } from "../lib/data";
+// import { CATALOG } from "../lib/data";
 import { ContentCard } from "../components/Cards";
 import React, { useState, useEffect } from "react";
 
@@ -271,7 +271,7 @@ function IMDbIntelligence() {
 }
 
 export function DetailsScreen() {
-  const { currentContent: c, toggleWatchlist, watchlist, showToast, addDownload, downloads, go } = useAppStore();
+  const { currentContent: c, toggleWatchlist, watchlist, showToast, addDownload, downloads, go, catalog } = useAppStore();
   const [epSortDesc, setEpSortDesc] = useState(false);
   const [trailerPlaying, setTrailerPlaying] = useState(false);
   const [heroMuted, setHeroMuted] = useState(true);
@@ -313,7 +313,7 @@ export function DetailsScreen() {
 
   const displayedEpisodes = c.episodes ? [...c.episodes].sort((a, b) => epSortDesc ? b.n - a.n : a.n - b.n) : [];
   
-  const similar = CATALOG.filter(item => 
+  const similar = catalog.filter(item => 
     item.id !== c.id && 
     (filterGenre ? item.genres.includes(filterGenre) : item.genres.some(g => c.genres.includes(g)))
   ).slice(0, 10);

@@ -47,7 +47,8 @@ export function ContentCard({ content, wide }: ContentCardProps) {
 
   if (wide) {
     // Generate a pseudo-random progress based on ID for visual variety
-    const progress = Math.round((content.id * 17) % 60 + 10);
+    const numericId = typeof content.id === 'string' ? parseInt(content.id.replace(/\D/g, '')) || 1 : content.id;
+    const progress = Math.round((numericId * 17) % 60 + 10);
     return (
       <div className="shrink-0 w-[240px] md:w-[280px] h-[140px] md:h-[160px] glass-panel rounded-xl relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-105 hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(0,0,0,0.5)] border border-transparent hover:border-white/20" onClick={handleSelect}>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10 flex flex-col justify-end px-[16px] py-[14px]">
