@@ -4,7 +4,7 @@ import { Content, Download } from '../types';
 import { supabase } from './supabase';
 import { Toast } from '../components/Toast';
 
-export type ScreenType = 'landing' | 'auth' | 'home' | 'search' | 'details' | 'player' | 'live' | 'dl' | 'profile' | 'partner' | 'admin' | 'originals' | 'series' | 'documentary' | 'sports' | 'music' | 'info' | 'payment' | 'schedule' | 'director' | 'billing';
+export type ScreenType = 'landing' | 'auth' | 'home' | 'search' | 'details' | 'player' | 'live' | 'dl' | 'profile' | 'partner' | 'admin' | 'originals' | 'series' | 'documentary' | 'sports' | 'music' | 'info' | 'payment' | 'schedule' | 'director';
 
 interface User {
   id?: string;

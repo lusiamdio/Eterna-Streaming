@@ -97,7 +97,7 @@ export function AuthScreen() {
       }
 
       showToast('Account created. Please complete payment.');
-      go('billing');
+      go('payment');
       return;
     } else {
       signIn({
@@ -109,7 +109,7 @@ export function AuthScreen() {
     }
 
     showToast('Account created. Please complete payment.');
-    go('billing');
+    go('payment');
   };
 
   const doSocial = (provider: string) => {
