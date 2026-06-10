@@ -34,6 +34,7 @@ export function TopNav({
           </div>
           <div className="hidden lg:flex gap-6 text-[14px] font-semibold text-eterna-muted relative">
              <div className="text-white cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => document.getElementById('discover-dropdown')?.classList.toggle('hidden')}>Discover</div>
+             <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('mylist')}>My List</div>
              <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('originals')}>Originals</div>
              <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('search')}>Films</div>
              <div className="cursor-pointer hover:text-eterna-rose transition-colors" onClick={() => go('series')}>Series</div>

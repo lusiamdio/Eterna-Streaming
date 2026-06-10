@@ -2,14 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../lib/store';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Play, Search, Globe, ChevronRight, Star, Check, Zap, MapPin, Film, MonitorPlay, Tv, BrainCircuit, Heart, ArrowRight, ShieldCheck, DownloadCloud, PlayCircle, Users
+  Play, Search, Globe, ChevronRight, Star, Check, Zap, MapPin, Film, MonitorPlay, Tv, BrainCircuit, Heart, ArrowRight, ShieldCheck, DownloadCloud, PlayCircle, Users, Sparkles
 } from 'lucide-react';
 
 export function LandingScreen() {
-  const { go, setInfoPage } = useAppStore();
+  const { go, setInfoPage, catalog } = useAppStore();
   const [scrolled, setScrolled] = useState(false);
   const [activeTab, setActiveTab] = useState('Movies');
   const [aiMood, setAiMood] = useState('');
+  
+  const originals = catalog.slice(0, 5);
+  const [currentOriginalIndex, setCurrentOriginalIndex] = useState(0);
+  const [showOriginalSynopsis, setShowOriginalSynopsis] = useState(false);
+  const currentOriginal = originals[currentOriginalIndex];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -149,34 +154,53 @@ export function LandingScreen() {
       </section>
 
       {/* 4. AI Discovery Engine */}
-      <section className="py-24 relative overflow-hidden bg-[#0D1324] border-y border-white/5">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-5xl bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#00D9FF]/10 via-transparent to-transparent pointer-events-none"></div>
-        <div className="max-w-[1240px] mx-auto px-6 md:px-12 relative z-10 text-center">
-           <BrainCircuit className="w-16 h-16 text-[#00D9FF] mx-auto mb-6 drop-shadow-[0_0_15px_rgba(0,217,255,0.5)]" />
-           <h2 className="text-4xl md:text-5xl font-bold mb-4">Find Your Next Obsession</h2>
-           <p className="text-[#A3AED0] text-lg mb-12 max-w-2xl mx-auto">Our AI analyzes your preferences and neural viewing patterns to recommend content you'll genuinely love.</p>
+      <section className="py-32 relative overflow-hidden bg-[#0D1324] border-y border-white/10">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-eterna-violet/20 via-transparent to-transparent pointer-events-none mix-blend-screen"></div>
+        <div className="max-w-[1240px] mx-auto px-6 md:px-12 relative z-10">
            
-           <div className="max-w-2xl mx-auto bg-[#111827] border border-white/10 rounded-2xl p-8 shadow-2xl relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#1E90FF]/10 to-[#6C63FF]/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <h3 className="font-bold text-xl mb-6 relative z-10">What are you in the mood for?</h3>
-              <div className="flex flex-wrap justify-center gap-3 relative z-10">
+           <div className="text-center mb-16">
+              <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-black/40 border border-white/10 shadow-2xl mb-8 backdrop-blur-md">
+                 <BrainCircuit className="w-10 h-10 text-eterna-rose drop-shadow-[0_0_15px_rgba(226,54,112,0.6)]" />
+                 <div className="w-px h-8 bg-white/20 mx-4"></div>
+                 <Sparkles className="w-8 h-8 text-eterna-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.6)]" />
+              </div>
+              <h2 className="text-5xl md:text-6xl font-black mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white/90 to-white/60">Find Your Next Obsession</h2>
+              <p className="text-[#A3AED0] text-xl max-w-2xl mx-auto font-light">Our AI analyzes your preferences and neural viewing patterns to recommend content you'll genuinely love.</p>
+           </div>
+           
+           <div className="max-w-3xl mx-auto bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 md:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-eterna-rose/5 via-transparent to-eterna-violet/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+              
+              <div className="text-center mb-8 relative z-10">
+                <span className="text-[12px] uppercase tracking-[3px] text-eterna-gold font-bold mb-3 block">Neural Match Engine</span>
+                <h3 className="font-semibold text-2xl text-white">What are you in the mood for?</h3>
+              </div>
+              
+              <div className="flex flex-wrap justify-center gap-3 relative z-10 mb-8">
                  {['Mind-Bending Action', 'Heartwarming Romance', 'Authentic African Cinema', 'Deep Space Sci-Fi', 'Spiritual Journey', 'Dark Comedy'].map(mood => (
-                    <button key={mood} onClick={() => setAiMood(mood)} className={`px-5 py-3 rounded-xl text-sm font-bold transition-all border ${aiMood === mood ? 'bg-[#1E90FF] border-[#1E90FF] text-white shadow-[0_0_20px_rgba(30,144,255,0.4)] scale-105' : 'bg-[#050816] border-white/10 text-[#A3AED0] hover:border-[#00D9FF]/50 hover:text-white'}`}>
+                    <button key={mood} onClick={() => setAiMood(mood)} className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 border ${aiMood === mood ? 'bg-gradient-to-r from-eterna-rose to-eterna-violet border-transparent text-white shadow-[0_0_30px_rgba(226,54,112,0.4)] scale-105' : 'bg-[#111827] border-white/10 text-[#A3AED0] hover:border-white/30 hover:text-white hover:bg-[#1f2937]'}`}>
                       {mood}
                     </button>
                  ))}
               </div>
+              
               <AnimatePresence>
                 {aiMood && (
-                   <motion.div initial={{ opacity: 0, height: 0, marginTop: 0 }} animate={{ opacity: 1, height: 'auto', marginTop: 32 }} exit={{ opacity: 0, height: 0, marginTop: 0 }} className="p-6 bg-[#050816] rounded-xl border border-white/5 text-left flex gap-6 items-center">
-                      <div className="w-20 h-28 bg-[#111827] rounded-lg shrink-0 overflow-hidden border border-white/10 relative">
-                        <img src="https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=200&fit=crop" className="w-full h-full object-cover" alt="" />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/40"><Search className="w-6 h-6 text-[#00D9FF] animate-pulse" /></div>
+                   <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.95 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="bg-[#111827]/80 rounded-2xl border border-white/10 p-6 flex flex-col md:flex-row gap-6 items-center md:items-start backdrop-blur-md">
+                      <div className="w-full md:w-32 h-44 bg-[#050816] rounded-xl shrink-0 overflow-hidden border border-white/20 relative shadow-2xl">
+                        <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=300&fit=crop" className="w-full h-full object-cover opacity-80" alt="" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-transparent"></div>
+                        <div className="absolute bottom-3 left-0 w-full text-center text-xs font-bold text-white z-10 px-2 drop-shadow-md">Recommended Match</div>
                       </div>
-                      <div>
-                         <div className="text-[10px] uppercase tracking-widest text-[#00D9FF] font-bold mb-1">AI Match Found — 99.4%</div>
-                         <h4 className="font-bold text-xl mb-2">The AI generated recommendation based on "{aiMood}"</h4>
-                         <p className="text-sm text-[#A3AED0]">A perfect blend of your selected mood, localized for your region with impeccable storytelling.</p>
+                      <div className="flex-1 text-center md:text-left">
+                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-eterna-gold/10 border border-eterna-gold/20 rounded-full text-[11px] uppercase tracking-widest text-eterna-gold font-bold mb-4">
+                           <span className="w-1.5 h-1.5 rounded-full bg-eterna-gold animate-pulse"></span> Match Found — 99.4%
+                         </div>
+                         <h4 className="font-bold text-2xl text-white mb-3">"{aiMood}"</h4>
+                         <p className="text-[#A3AED0] leading-relaxed mb-6 font-light">A perfect blend of your selected mood, localized for your region with impeccable storytelling and breathtaking visuals.</p>
+                         <button className="bg-white/10 hover:bg-white text-white hover:text-black px-8 py-3 rounded-full font-bold transition-all duration-300 w-full md:w-auto">
+                           Start Watching
+                         </button>
                       </div>
                    </motion.div>
                 )}
@@ -188,16 +212,72 @@ export function LandingScreen() {
       {/* 5. Eterna Originals */}
       <section className="py-0 relative">
         <div className="w-full h-[70vh] min-h-[500px] relative overflow-hidden group">
-           <img src="https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=1920&fit=crop" className="w-full h-full object-cover transform transition-transform duration-1000 group-hover:scale-105" alt="Eterna Originals" />
-           <div className="absolute inset-0 bg-gradient-to-r from-[#050816] via-[#050816]/70 to-transparent"></div>
+           <AnimatePresence mode="wait">
+             <motion.img 
+               key={currentOriginal?.id}
+               initial={{ opacity: 0, scale: 1.05 }}
+               animate={{ opacity: 1, scale: 1 }}
+               exit={{ opacity: 0 }}
+               transition={{ duration: 1 }}
+               src={currentOriginal?.coverUrl || "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=1920&fit=crop"} 
+               className="absolute inset-0 w-full h-full object-cover transform transition-transform duration-1000 group-hover:scale-105" 
+               alt="Eterna Originals" 
+             />
+           </AnimatePresence>
+           <div className="absolute inset-0 bg-gradient-to-r from-[#050816] w-full md:w-3/4 lg:w-1/2"></div>
+           <div className="absolute inset-0 bg-gradient-to-t from-[#050816] via-[#050816]/50 to-transparent"></div>
            <div className="absolute inset-0 flex items-center max-w-[1600px] mx-auto px-6 md:px-12 pt-20">
-              <div className="max-w-xl">
-                 <div className="text-[#00D9FF] font-black tracking-widest uppercase text-sm mb-4">Exclusive</div>
-                 <h2 className="text-5xl md:text-7xl font-bold tracking-tighter mb-4">Eterna <span className="text-white ring-1 ring-white/20 px-4 py-1 rounded bg-white/5 backdrop-blur-sm">Originals</span></h2>
-                 <p className="text-xl text-white/80 mb-8 font-light">Stories produced exclusively for Eterna. World-class production. Visionary directors. Unforgettable narratives.</p>
-                 <div className="flex gap-4">
-                   <button className="bg-white text-black px-8 py-3 rounded-full font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors"><Play className="w-5 h-5 fill-current" /> Play Trailer</button>
-                   <button className="bg-black/50 backdrop-blur border border-white/20 text-white px-8 py-3 rounded-full font-bold hover:bg-white/10 transition-colors">More Info</button>
+              <div className="max-w-xl relative object-contain z-10">
+                 <div className="text-[#00D9FF] font-black tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
+                   <Star className="w-4 h-4 fill-current" /> Exclusive Originals
+                 </div>
+                 <h2 className="text-5xl md:text-7xl font-bold tracking-tighter mb-4 line-clamp-2">
+                   {currentOriginal?.title || "Eterna"} <span className="text-white ring-1 ring-white/20 px-4 py-1 rounded bg-white/5 backdrop-blur-sm self-start inline-block mt-2">Originals</span>
+                 </h2>
+                 
+                 <AnimatePresence mode="wait">
+                   {showOriginalSynopsis ? (
+                     <motion.p 
+                       key="synopsis"
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       exit={{ opacity: 0, y: -10 }}
+                       className="text-xl text-white/90 mb-8 font-light leading-relaxed"
+                     >
+                       {currentOriginal?.desc}
+                     </motion.p>
+                   ) : (
+                     <motion.p 
+                       key="tagline"
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       exit={{ opacity: 0, y: -10 }}
+                       className="text-xl text-white/80 mb-8 font-light"
+                     >
+                       Stories produced exclusively for Eterna. World-class production. Visionary directors. Unforgettable narratives.
+                     </motion.p>
+                   )}
+                 </AnimatePresence>
+
+                 <div className="flex gap-4 mb-12">
+                   <button onClick={() => go('auth')} className="bg-white text-black px-8 py-3 rounded-full font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors"><Play className="w-5 h-5 fill-current" /> Play Trailer</button>
+                   <button onClick={() => setShowOriginalSynopsis(!showOriginalSynopsis)} className="bg-black/50 backdrop-blur border border-white/20 text-white px-8 py-3 rounded-full font-bold hover:bg-white/10 transition-colors">
+                     {showOriginalSynopsis ? "Hide Info" : "More Info"}
+                   </button>
+                 </div>
+                 
+                 {/* Carousel Controls */}
+                 <div className="flex items-center gap-4">
+                   {originals.map((_, idx) => (
+                     <button 
+                       key={idx} 
+                       onClick={() => {
+                         setCurrentOriginalIndex(idx);
+                         setShowOriginalSynopsis(false);
+                       }}
+                       className={`h-2 rounded-full transition-all duration-300 ${currentOriginalIndex === idx ? 'w-8 bg-[#1E90FF] shadow-[0_0_10px_rgba(30,144,255,0.8)]' : 'w-2 bg-white/30 hover:bg-white/70'}`}
+                     />
+                   ))}
                  </div>
               </div>
            </div>

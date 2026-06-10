@@ -9,7 +9,7 @@ import { ContentCard } from "../components/Cards";
 import { Content } from "../types";
 
 export function HomeScreen() {
-  const { go, setContent, watchlist, toggleWatchlist, catalog } = useAppStore();
+  const { go, setContent, toggleMyList, catalog, continueWatching, myList } = useAppStore();
   const heroC = catalog[0];
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -35,21 +35,53 @@ export function HomeScreen() {
     go('details');
   };
 
-  // Personalized Recommendation Logic
-  const myGenres = new Set(
-    watchlist
-      .map(id => catalog.find(c => c.id === id))
-      .filter(Boolean)
-      .flatMap(c => c!.genres)
-  );
+  const [aiRecommendedContent, setAiRecommendedContent] = useState<Content[]>([]);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
-  let recommendedContent = catalog.filter(c => 
-    !watchlist.includes(c.id) && c.genres.some(g => myGenres.has(g))
-  );
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      // If user has no history, don't ping AI yet to save tokens, just use fallback
+      const history = [...new Set([...myList, ...continueWatching])];
+      if (history.length === 0) {
+        setAiRecommendedContent(catalog.slice(1, 7));
+        return;
+      }
+      
+      setIsAiLoading(true);
+      try {
+        const historyDetails = history.map(id => {
+          const c = catalog.find(x => x.id === id);
+          return c ? { id: c.id, title: c.title, genres: c.genres } : null;
+        }).filter(Boolean);
 
-  if (recommendedContent.length === 0) {
-    recommendedContent = catalog.slice(1, 7); // Fallback if no specific recommendations
-  }
+        const response = await fetch('/api/gemini/recommend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ history: historyDetails, catalog })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.recommendedIds && Array.isArray(data.recommendedIds)) {
+            const recommended = data.recommendedIds.map((id: number) => catalog.find(c => c.id === id)).filter(Boolean);
+            if (recommended.length > 0) {
+              setAiRecommendedContent(recommended);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch AI recommendations", err);
+      } finally {
+        setIsAiLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, [myList, continueWatching, catalog]);
+
+  // Personalized Recommendation Logic Fallback
+  let recommendedContent = aiRecommendedContent.length > 0 ? aiRecommendedContent : catalog.slice(1, 7);
 
   return (
     <div className="flex flex-col min-h-screen relative bg-eterna-bg selection:bg-eterna-gold selection:text-black">
@@ -87,8 +119,8 @@ export function HomeScreen() {
             <button className="bg-white text-black hover:bg-white/90 px-8 py-3.5 rounded-full flex items-center gap-3 font-bold shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:scale-105 transition-all text-lg" onClick={doPlayHero}>
               <Play className="w-5 h-5 fill-current" /> Watch Now
             </button>
-            <button className="ui-button px-8 py-3.5 rounded-full font-bold flex items-center gap-2 text-lg hover:bg-white/10" onClick={() => toggleWatchlist(heroC.id)}>
-              <Plus className="w-5 h-5" /> Add to Watchlist
+            <button className="ui-button px-8 py-3.5 rounded-full font-bold flex items-center gap-2 text-lg hover:bg-white/10" onClick={() => toggleMyList(heroC.id)}>
+              <Plus className="w-5 h-5" /> Add to My List
             </button>
             <button className="px-6 py-3 font-semibold text-white/50 hover:text-white transition-colors border border-white/0 hover:border-white/10 rounded-full" onClick={() => go('director')}>
               Meet the Director
@@ -98,14 +130,16 @@ export function HomeScreen() {
       </div>
 
       <div className="relative z-20 pb-12 space-y-4">
-        {watchlist.length > 0 && (
-          <Section title="My List" data={catalog.filter(c => watchlist.includes(c.id))} />
+        {myList.length > 0 && (
+          <Section title="My List" data={catalog.filter(c => myList.includes(c.id))} />
         )}
         <Section title="Trending Now" data={catalog.slice(0, 8)} />
         <Section title="Popular on Eterna" data={catalog.slice(4, 9)} />
-        <Section title="Continue Watching" data={catalog.slice(2, 6)} wide />
+        {continueWatching.length > 0 && (
+          <Section title="Continue Watching" data={continueWatching.map(id => catalog.find(c => c.id === id)).filter(Boolean) as Content[]} wide />
+        )}
         <Section title="New Releases" data={catalog.filter(c => c.tag === 'new')} />
-        <Section title="Recommended for You" data={recommendedContent} />
+        <Section title="Recommended for You" badge={isAiLoading ? "AI Thinking..." : "AI Matched"} data={recommendedContent} />
       </div>
 
       {/* Nova AI Companion */}

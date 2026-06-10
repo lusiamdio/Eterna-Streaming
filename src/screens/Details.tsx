@@ -277,12 +277,27 @@ export function DetailsScreen() {
   const [heroMuted, setHeroMuted] = useState(true);
   const [filterGenre, setFilterGenre] = useState<string | null>(null);
   const [expandedEp, setExpandedEp] = useState<number | null>(null);
+  const [isPip, setIsPip] = useState(false);
 
   useEffect(() => {
     setTrailerPlaying(false);
     const t = setTimeout(() => setTrailerPlaying(true), 800);
     return () => clearTimeout(t);
   }, [c?.id]);
+
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.scrollTop > 350) {
+        setIsPip(true);
+      } else {
+        setIsPip(false);
+      }
+    };
+    const scroller = document.getElementById('details-scroll-container');
+    scroller?.addEventListener('scroll', handleScroll);
+    return () => scroller?.removeEventListener('scroll', handleScroll);
+  }, []);
 
   if (!c) return null;
 
@@ -336,20 +351,21 @@ export function DetailsScreen() {
         }
       />
       
-      <div className="flex-1 overflow-y-auto">
+      <div id="details-scroll-container" className="flex-1 overflow-y-auto">
         {/* Details Hero */}
         <div className="h-[400px] sm:h-[500px] lg:h-[600px] relative flex flex-col justify-end p-[20px_28px] overflow-hidden bg-[#050505]">
           <div className="absolute inset-0 atmosphere z-0 pointer-events-none"></div>
           
-          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <div className={`absolute inset-0 pointer-events-none overflow-hidden pb-4 ${isPip ? 'visible z-[100]' : 'z-0'}`}>
             {trailerPlaying ? (
               <video 
                 autoPlay 
                 loop 
                 muted={heroMuted}
                 playsInline
-                className="w-full h-full object-cover opacity-60 scale-105"
+                className={`object-cover transition-all duration-300 pointer-events-auto shadow-2xl ${isPip ? 'fixed bottom-[80px] right-[24px] w-[240px] h-[135px] rounded-xl border border-white/20' : 'w-full h-full opacity-60 scale-105'}`}
                 src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" 
+                onClick={isPip ? doPlayFromDetails : undefined}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-[210px] opacity-10">

@@ -4,7 +4,7 @@ import { Content, Download } from '../types';
 import { supabase } from './supabase';
 import { Toast } from '../components/Toast';
 
-export type ScreenType = 'landing' | 'auth' | 'home' | 'search' | 'details' | 'player' | 'live' | 'dl' | 'profile' | 'partner' | 'admin' | 'originals' | 'series' | 'documentary' | 'sports' | 'music' | 'info' | 'payment' | 'schedule' | 'director';
+export type ScreenType = 'landing' | 'auth' | 'home' | 'search' | 'details' | 'player' | 'live' | 'dl' | 'profile' | 'partner' | 'admin' | 'originals' | 'series' | 'documentary' | 'sports' | 'music' | 'info' | 'payment' | 'schedule' | 'director' | 'mylist';
 
 interface User {
   id?: string;
@@ -39,6 +39,7 @@ interface AppState {
   myList: (number | string)[];
   watchlist: (number | string)[];
   liked: (number | string)[];
+  continueWatching: (number | string)[];
   downloads: Download[];
   reviews: Review[];
   searchQ: string;
@@ -61,6 +62,7 @@ interface AppContextType extends AppState {
   toggleMyList: (id: number | string) => void;
   toggleWatchlist: (id: number | string) => void;
   toggleLiked: (id: number | string) => void;
+  addContinueWatching: (id: number | string) => void;
   addDownload: (item: Download) => void;
   removeDownload: (id: string) => void;
   clearDownloads: () => void;
@@ -81,6 +83,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     myList: [],
     watchlist: [],
     liked: [],
+    continueWatching: [],
     downloads: [...DOWNLOADS_INIT],
     reviews: [],
     searchQ: '',
@@ -296,6 +299,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     go('schedule');
   };
 
+  const addContinueWatching = (id: number|string) => {
+    setState(prev => {
+      // Remove it if it exists so we can move it to the front
+      const list = prev.continueWatching.filter(x => x !== id);
+      return { ...prev, continueWatching: [id, ...list] };
+    });
+  };
+
   const toggleLiked = (id: number|string) => {
     setState(prev => {
       const added = !prev.liked.includes(id);
@@ -336,6 +347,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       toggleMyList,
       toggleWatchlist,
       toggleLiked,
+      addContinueWatching,
       addDownload,
       removeDownload,
       clearDownloads,

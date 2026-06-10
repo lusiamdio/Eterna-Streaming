@@ -9,8 +9,8 @@ const MOODS = ['Inspired', 'Curious', 'Adventurous', 'Spiritual', 'Romantic', 'M
 const GOALS = ['Leadership', 'Entrepreneurship', 'Marriage', 'Parenting', 'Faith', 'Personal Growth', 'Wealth Creation', 'Mental Wellness', 'Innovation', 'AI & Technology'];
 const TIMES = ['15 min', '30 min', '60 min', '90 min', '2 Hours', 'Weekend Marathon'];
 
-export function DiscoveryHub({ title = "Intent-Based Discovery", isOriginals = false, isSeries = false, forceGenre }: { title?: string, isOriginals?: boolean, isSeries?: boolean, forceGenre?: string }) {
-  const { setContent, go, catalog } = useAppStore();
+export function DiscoveryHub({ title = "Intent-Based Discovery", isOriginals = false, isSeries = false, forceGenre, isMyList = false }: { title?: string, isOriginals?: boolean, isSeries?: boolean, forceGenre?: string, isMyList?: boolean }) {
+  const { setContent, go, catalog, myList } = useAppStore();
   const [prompt, setPrompt] = useState("");
   const [activeMood, setActiveMood] = useState("");
   const [activeGoal, setActiveGoal] = useState("");
@@ -53,6 +53,10 @@ export function DiscoveryHub({ title = "Intent-Based Discovery", isOriginals = f
   };
 
   const filtered = useMemo(() => {
+    if (isMyList) {
+      return catalog.filter(c => myList.includes(c.id));
+    }
+
     let res = [...catalog, ...catalog.slice(0, 5).map(c => ({...c, id: c.id + 100})), ...catalog.map(c => ({...c, id: c.id + 200}))]; // Expand catalog slightly to over 20 items
     
     if (forceGenre) {
@@ -74,7 +78,7 @@ export function DiscoveryHub({ title = "Intent-Based Discovery", isOriginals = f
     // Simulate AI Filtering
     if (activeMood) {
       if (['Inspired', 'Motivated', 'Spiritual'].includes(activeMood)) {
-        res = res.filter(c => c.genres?.includes("Drama") || c.genres?.includes("Docs") || c.rating >= '9.0');
+        res = res.filter(c => c.genres?.includes("Drama") || c.genres?.includes("Docs") || (c.rating && parseFloat(c.rating) >= 9.0));
       } else if (['Thrilled', 'Adventurous'].includes(activeMood)) {
         res = res.filter(c => c.genres?.includes("Action") || c.genres?.includes("Thriller") || c.genres?.includes("Sci-Fi"));
       } else if (['Family Time', 'Relaxed', 'Romantic'].includes(activeMood)) {
@@ -98,8 +102,12 @@ export function DiscoveryHub({ title = "Intent-Based Discovery", isOriginals = f
        res = res.sort(() => 0.5 - Math.random()).slice(0, 6); // Randomize for AI response
     }
 
+    if (!aiResponse && prompt) {
+       res = res.filter(c => c.title.toLowerCase().includes(prompt.toLowerCase()));
+    }
+
     return res.length > 0 ? res : catalog.slice(0, 6); // Fallback
-  }, [activeMood, activeGoal, activeTime, aiResponse, isOriginals, isSeries, catalog]);
+  }, [activeMood, activeGoal, activeTime, aiResponse, isOriginals, isSeries, forceGenre, catalog, isMyList, myList, prompt]);
 
   const handleAiSearch = () => {
     if (!prompt) return;
@@ -156,6 +164,15 @@ Recommended carefully curated selections for you.`);
             <span className="cursor-pointer hover:text-white transition-colors" onClick={() => setPrompt('Show me African excellence')}>Show me African excellence</span>
           </div>
         </div>
+
+        {isMyList && filtered.length === 0 && (
+          <div className="text-center text-white/50 py-20 w-full max-w-3xl mx-auto mb-16 p-6 rounded-2xl bg-black/40 border border-white/10">
+            <p className="text-xl mb-6">Your list is empty.</p>
+            <button onClick={() => go('home')} className="bg-white/10 hover:bg-white/20 text-white font-bold px-8 py-3 rounded-full transition-colors border border-white/20">
+              Explore Eterna
+            </button>
+          </div>
+        )}
 
         {/* AI Response Box */}
         {aiTyping && (

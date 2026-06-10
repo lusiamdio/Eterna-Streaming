@@ -4,7 +4,7 @@ import { useAppStore } from "../lib/store";
 import { BottomNav } from "../components/Navigation";
 
 export function PlayerScreen() {
-  const { currentContent: c, goBack, showToast, toggleMyList, toggleLiked, myList, liked, addDownload, downloads, go } = useAppStore();
+  const { currentContent: c, goBack, showToast, toggleMyList, toggleLiked, myList, liked, addDownload, downloads, go, addContinueWatching } = useAppStore();
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0); 
   const [muted, setMuted] = useState(false);
@@ -16,6 +16,12 @@ export function PlayerScreen() {
   
   const inMyList = myList.includes(c?.id ?? -1);
   const inLiked = liked.includes(c?.id ?? -1);
+
+  useEffect(() => {
+    if (c) {
+      addContinueWatching(c.id);
+    }
+  }, [c?.id]);
 
   useEffect(() => {
     if (playing) {

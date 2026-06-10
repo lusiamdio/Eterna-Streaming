@@ -51,6 +51,7 @@ export default function App() {
       case 'documentary': return <DiscoveryHub title="Documentaries" forceGenre="Documentary" />;
       case 'sports': return <DiscoveryHub title="Sports" forceGenre="Sports" />;
       case 'music': return <DiscoveryHub title="Music & Events" forceGenre="Music" />;
+      case 'mylist': return <DiscoveryHub title="My List" isMyList />;
       case 'info': return <InfoScreen />;
       case 'payment': return <PaymentScreen />;
       case 'schedule': return <ScheduleScreen />;

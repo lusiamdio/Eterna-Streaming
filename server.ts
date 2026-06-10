@@ -109,6 +109,42 @@ Format the output as a professional legal document in markdown. Include signatur
     }
   });
 
+  app.post("/api/gemini/recommend", async (req, res) => {
+    try {
+      const { history, catalog } = req.body;
+      if (!history || !catalog) {
+        return res.status(400).json({ error: "Missing history or catalog" });
+      }
+
+      const prompt = `Analyze the user's viewing history and suggest personalized content from the provided catalog.
+      
+      User's History and Preferences (IDs and Titles):
+      ${JSON.stringify(history)}
+      
+      Available Catalog:
+      ${JSON.stringify(catalog.map((c: any) => ({ id: c.id, title: c.title, genres: c.genres, desc: c.desc })))}
+      
+      Return ONLY a JSON array of up to 4 integer IDs of the recommended catalog items that are NOT in the user's history. Do not return anything else.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          systemInstruction: "You are an AI recommendation engine. Return a JSON array of integers.",
+        }
+      });
+      
+      let idsStr = response.text || "[]";
+      let ids = JSON.parse(idsStr);
+      
+      res.json({ recommendedIds: ids });
+    } catch (error: any) {
+      console.error("Gemini API Error (Recommend):", error);
+      res.status(500).json({ error: error.message || "Failed to generate AI recommendations" });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
