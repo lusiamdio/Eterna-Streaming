@@ -128,11 +128,11 @@ export function LandingScreen() {
 
           <div className="flex gap-6 overflow-x-auto pb-8 hide-scrollbar snap-x snap-mandatory pr-12">
             {[
-              { id: 1, title: 'Echoes of Sahara', genre: 'African Cinema • Drama', duration: '2h 15m', rating: '98%', img: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=400&fit=crop' },
-              { id: 2, title: 'Neon Nights', genre: 'Sci-Fi • Thriller', duration: '1h 50m', rating: '95%', img: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=400&fit=crop' },
-              { id: 3, title: 'Lagos Hustle', genre: 'Action • Crime', duration: '2h 05m', rating: '92%', img: 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=400&fit=crop' },
-              { id: 4, title: 'The Silent Code', genre: 'Spy • Mystery', duration: '1h 45m', rating: '89%', img: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=400&fit=crop' },
-              { id: 5, title: 'Spirit Walkers', genre: 'Documentary', duration: '1h 30m', rating: '99%', img: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=400&fit=crop' },
+              { id: 1, title: 'The Desert Child', genre: 'African Cinema • Drama', duration: '2h 15m', rating: '98%', img: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcROiX8crN72s1u2k31lV8rTn_x4EEwKUDAM8A&s' },
+              { id: 2, title: 'Tsotsi', genre: 'Drama • Thriller', duration: '1h 50m', rating: '95%', img: 'https://m.media-amazon.com/images/M/MV5BNGVhMjgzZDktOTc5Yy00Y2M1LTk5NjctNWQwMmY5NmRjNTZiXkEyXkFqcGc@._V1_.jpg' },
+              { id: 3, title: 'My Mother is A Witch', genre: 'Drama • Thriller', duration: '2h 05m', rating: '92%', img: 'https://cdn-ildaahh.nitrocdn.com/gxxXQTdYyyXFQAZyfyCQHljCaYKuRddP/assets/images/optimized/rev-08ecbfd/whatkeptmeup.com/wp-content/uploads/2025/12/photo_2025-12-13_03-28-00-819x1024.webp' },
+              { id: 4, title: 'Soul Snatchers', genre: 'Drama • Mystery', duration: '1h 45m', rating: '89%', img: 'https://houseoffilm.com/wp-content/uploads/2026/01/soul-snatchers-2-Film.jpg' },
+              { id: 5, title: 'Into the Okavango', genre: 'Documentary', duration: '1h 30m', rating: '99%', img: 'https://lirp.cdn-website.com/ea52b266/dms3rep/multi/opt/MV5BMjQ0MDM5MTY5Ml5BMl5BanBnXkFtZTgwMTg5ODczNTM-._V1_FMjpg_UX1000_-1920w.jpeg' },
             ].map(movie => (
                <div key={movie.id} className="relative w-[280px] shrink-0 aspect-[2/3] rounded-2xl overflow-hidden snap-start group cursor-pointer border border-white/5">
                  <img src={movie.img} alt={movie.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -325,10 +325,10 @@ export function LandingScreen() {
         <h2 className="text-4xl font-bold text-center mb-16">Stories That Move You</h2>
         <div className="flex gap-6 overflow-x-auto pb-8 hide-scrollbar snap-x snap-mandatory">
           {[
-            { name: "Sarah K.", country: "South Africa", review: "The collection of African cinema is unparalleled. The AI recommendations somehow always know my mood.", img: "https://images.unsplash.com/photo-1531123897727-8f129e1b28ce?q=80&w=200&fit=crop" },
-            { name: "David L.", country: "United Kingdom", review: "Worth every penny for the 4K Ultra HD quality alone. Eterna Originals are beating Hollywood right now.", img: "https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=200&fit=crop" },
-            { name: "Amara J.", country: "Nigeria", review: "The cinematic interface is gorgeous, but the content library is the real star. Cancelled my other subs.", img: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=200&fit=crop" },
-            { name: "Michael R.", country: "USA", review: "Finally, a streaming platform that gives equal weight to global cinema. The Live TV feature is a gamechanger.", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=200&fit=crop" }
+            { name: "Nosipho Dumisa.", country: "South Africa", review: "The collection of African cinema is unparalleled. The AI recommendations somehow always know my mood.", img: "https://static.wixstatic.com/media/00ea55_35af390087b74513862f075a012dbddb~mv2.png/v1/fill/w_669,h_669,al_c,q_90,enc_avif,quality_auto/00ea55_35af390087b74513862f075a012dbddb~mv2.png" },
+            { name: "Antoine Fuqua.", country: "United Kingdom", review: "Worth every penny for the 4K Ultra HD quality alone. Eterna Originals are beating Hollywood right now.", img: "https://image.cnbcfm.com/api/v1/image/106842634-1613707879604-gettyimages-1145683972-ton_6031_2019042820009174.jpeg?v=1613707897&w=1480&h=833&ffmt=webp&vtcrop=y" },
+            { name: "Funke Akindele.", country: "Nigeria", review: "The cinematic interface is gorgeous, but the content library is the real star. Cancelled my other subs.", img: "https://www.bellanaija.com/wp-content/uploads/2023/03/336147860_927684884947063_2070764670923974235_n.jpg" },
+            { name: "Tope Oshin", country: "USA", review: "Finally, a streaming platform that gives equal weight to global cinema. The Live TV feature is a gamechanger.", img: "https://www.bellanaija.com/wp-content/uploads/2024/11/102899052_588338162074228_7161820609022049952_n.jpg" }
           ].map((item, i) => (
             <div key={i} className="min-w-[320px] md:min-w-[400px] bg-[#111827] border border-white/5 rounded-2xl p-8 snap-center hover:border-white/20 transition-colors">
                <div className="flex text-[#00D9FF] mb-6">

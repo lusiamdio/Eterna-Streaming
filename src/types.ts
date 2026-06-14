@@ -15,7 +15,7 @@ export interface Episode {
 
 export interface Content {
   id: number | string;
-  emoji: string;
+  emoji?: string;
   coverUrl?: string;
   title: string;
   sub: string;
@@ -27,6 +27,7 @@ export interface Content {
   desc: string;
   cast: CastMember[];
   episodes: Episode[];
+  videoUrl?: string;
 }
 
 export interface Channel {

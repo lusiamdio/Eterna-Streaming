@@ -32,6 +32,24 @@ export function AuthScreen() {
     }
     setErr('');
 
+    // Super Admin Command Center explicit credential credential validation
+    if (email === 'simao@neurogrowthlabs.co.za') {
+      if (pw !== 'EternaShowTime') {
+        setErr('Invalid passcode for Super Admin Command Center.');
+        return;
+      }
+      signIn({
+        name: 'Simao',
+        initials: 'S',
+        email: 'simao@neurogrowthlabs.co.za',
+        plan: 'Premium',
+        role: 'super_admin'
+      });
+      showToast('Welcome back, Super Admin!');
+      go('admin');
+      return;
+    }
+
     if (supabase) {
       setLoading(true);
       const { error, data } = await supabase.auth.signInWithPassword({ email, password: pw });
@@ -58,16 +76,30 @@ export function AuthScreen() {
       return;
     } else {
       const parsedName = email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim() || 'User';
+      let role = 'normal';
+      if (email === 'simao@neurogrowthlabs.co.za') {
+        role = 'super_admin';
+      } else if (email.includes('partner') || email.includes('creator')) {
+        role = 'partner';
+      }
       signIn({
         name: parsedName,
         initials: parsedName[0].toUpperCase(),
         email,
-        plan: 'Premium'
+        plan: 'Premium',
+        role
       });
+      
+      showToast('Welcome back!');
+      if (role === 'super_admin') {
+        go('admin');
+      } else if (role === 'partner') {
+        go('partner');
+      } else {
+        go('home');
+      }
+      return;
     }
-
-    showToast('Welcome back!');
-    go('home');
   };
 
   const doSignUp = async () => {

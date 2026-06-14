@@ -66,7 +66,7 @@ async function startServer() {
       }
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3.5-flash',
         contents: prompt,
         config: {
           systemInstruction: 'You are an AI Executive Command Center for a Streaming Operating System called Eterna. Respond in concise, professional business intel and keep responses short, using bullet points where appropriate.',
@@ -98,7 +98,7 @@ Offer: ${metadata.offer || '$1,200,000'}
 Format the output as a professional legal document in markdown. Include signature blocks and standard legal clauses for indemnification, warranties, and severability. Return ONLY the markdown.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3.5-flash',
         contents: prompt,
       });
       

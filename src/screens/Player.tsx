@@ -12,34 +12,45 @@ export function PlayerScreen() {
   const [subs, setSubs] = useState(false);
   const [watchParty, setWatchParty] = useState(false);
   const [chatMsg, setChatMsg] = useState("");
-  const playTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
   
   const inMyList = myList.includes(c?.id ?? -1);
   const inLiked = liked.includes(c?.id ?? -1);
 
   useEffect(() => {
     if (c) {
-      addContinueWatching(c.id);
+      const timer = setTimeout(() => {
+        addContinueWatching(c.id);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [c?.id]);
 
   useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
     if (playing) {
-      playTimerRef.current = setInterval(() => {
-        setProgress(p => {
-          if (p >= 100) {
-            setPlaying(false);
-            showToast('⏹ Episode ended');
-            return 0;
-          }
-          return Math.min(p + 0.3, 100);
-        });
-      }, 300);
+      if (video.paused) {
+        video.play().catch(() => {});
+      }
     } else {
-      if (playTimerRef.current) clearInterval(playTimerRef.current);
+      if (!video.paused) {
+        video.pause();
+      }
     }
-    return () => { if (playTimerRef.current) clearInterval(playTimerRef.current); };
   }, [playing]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.load();
+      if (playing) {
+        video.play().catch(() => {});
+      }
+    }
+  }, [c?.id]);
 
   if (!c) return null;
 
@@ -49,6 +60,11 @@ export function PlayerScreen() {
     const rect = e.currentTarget.getBoundingClientRect();
     const pct = ((e.clientX - rect.left) / rect.width) * 100;
     setProgress(Math.min(Math.max(pct, 0), 100));
+    
+    const video = videoRef.current;
+    if (video && video.duration) {
+      video.currentTime = (Math.min(Math.max(pct, 0), 100) / 100) * video.duration;
+    }
     showToast('Jumped to ' + Math.round(pct) + '%');
   };
 
@@ -57,26 +73,75 @@ export function PlayerScreen() {
     const pct = ((e.clientX - rect.left) / rect.width) * 100;
     const v = Math.min(Math.max(pct, 0), 100);
     setVolume(v);
-    if (muted && v > 0) setMuted(false);
+    
+    const video = videoRef.current;
+    if (video) {
+      video.volume = v / 100;
+      if (v > 0) {
+        video.muted = false;
+        setMuted(false);
+      }
+    }
     showToast('Volume: ' + Math.round(v) + '%');
   };
 
   const toggleMute = () => {
-    setMuted(!muted);
-    showToast(!muted ? '🔇 Muted' : '🔊 Unmuted');
+    const video = videoRef.current;
+    if (video) {
+      video.muted = !muted;
+      setMuted(!muted);
+      showToast(!muted ? '🔇 Muted' : '🔊 Unmuted');
+    } else {
+      setMuted(!muted);
+    }
   };
 
-  const rewind = () => { setProgress(p => Math.max(0, p - 2.8)); showToast('⏪ -10s'); };
-  const forward = () => { setProgress(p => Math.min(100, p + 2.8)); showToast('⏩ +10s'); };
+  const rewind = () => {
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = Math.max(0, video.currentTime - 10);
+      showToast('⏪ -10s');
+    } else {
+      setProgress(p => Math.max(0, p - 2.8)); 
+      showToast('⏪ -10s');
+    }
+  };
 
-  const totalSecs = 58 * 60 + 30; // ~58m 30s Mock duration for everything
-  const curSecs = Math.round(totalSecs * progress / 100);
-  const formatTime = (s: number) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2, '0')}`;
+  const forward = () => {
+    const video = videoRef.current;
+    if (video) {
+      video.currentTime = Math.min(video.duration || 100, video.currentTime + 10);
+      showToast('⏩ +10s');
+    } else {
+      setProgress(p => Math.min(100, p + 2.8)); 
+      showToast('⏩ +10s');
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setCurrentTime(video.currentTime);
+    if (video.duration) {
+      setProgress((video.currentTime / video.duration) * 100);
+    }
+  };
+
+  const handleDurationChange = () => {
+    const video = videoRef.current;
+    if (video && video.duration) {
+      setDuration(video.duration);
+    }
+  };
+
+  const totalSecs = duration || 58 * 60 + 30; // ~58m 30s Mock duration for everything
+  const curSecs = Math.round(currentTime || (totalSecs * progress / 100));
+  const formatTime = (s: number) => `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2, '0')}`;
 
   const doDownload = () => {
     const exists = downloads.find(d => d.id === 'dl_' + c.id);
     if(exists) { showToast('Already downloaded: '+c.title); return; }
-    addDownload({ emoji: c.emoji, title: c.title+(c.eps?' S1:E1':''), meta: c.sub+' · Downloading…', size: '2.1 GB', prog: 0, id: 'dl_'+c.id });
+    addDownload({ emoji: c.emoji || '🎬', title: c.title+(c.eps?' S1:E1':''), meta: c.sub+' · Downloading…', size: '2.1 GB', prog: 0, id: 'dl_'+c.id });
     showToast('Downloading: '+c.title+'…');
   };
 
@@ -95,9 +160,23 @@ export function PlayerScreen() {
       <div className={`flex flex-col flex-1 transition-all duration-300 ${watchParty ? 'md:w-[calc(100%-320px)] border-r border-[#333]' : 'w-full'}`}>
         {/* Player Stage */}
         <div className="aspect-video bg-black flex items-center justify-center relative w-full overflow-hidden group">
-          <div className="w-full h-full flex items-center justify-center text-[190px] select-none opacity-40">
-            {c.emoji}
-          </div>
+          <video
+            ref={videoRef}
+            src={c.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4"}
+            className="w-full h-full object-contain absolute inset-0 z-0"
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onTimeUpdate={handleTimeUpdate}
+            onDurationChange={handleDurationChange}
+            playsInline
+          />
+          
+          {/* Subtle background emoji layer when not playing or loading */}
+          {!playing && progress === 0 && (
+            <div className="w-full h-full flex items-center justify-center text-[190px] select-none opacity-40 absolute inset-0 z-1 pointer-events-none">
+              {c.emoji || '🎬'}
+            </div>
+          )}
           
           {/* Top Controls Overlay */}
           <div className="absolute top-0 left-0 right-0 p-[14px_24px] flex items-center gap-[14px] bg-gradient-to-b from-black/90 via-black/40 to-transparent z-20">

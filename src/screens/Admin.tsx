@@ -74,6 +74,19 @@ export function AdminScreen() {
   const { go } = useAppStore();
   const [activeMenu, setActiveMenu] = useState('dashboard');
   const [workflowDetails, setWorkflowDetails] = useState<any>(null);
+  const [currentTimecode, setCurrentTimecode] = useState("07:53:20:00");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      const f = String(Math.floor(now.getMilliseconds() / 41)).padStart(2, '0'); // Simulate 24fps frames
+      setCurrentTimecode(`${h}:${m}:${s}:${f}`);
+    }, 41); // Roughly 24 frames per second
+    return () => clearInterval(interval);
+  }, []);
 
   const renderContent = () => {
     switch (activeMenu) {
@@ -93,43 +106,95 @@ export function AdminScreen() {
   };
 
   return (
-    <div className="flex h-screen bg-[#050505] text-white">
+    <div className="flex h-screen bg-[#030612] text-white overflow-hidden font-sans selection:bg-[#00D9FF] selection:text-black">
+      {/* Sci-fi Scanning Grid Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,217,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,217,255,0.02)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none"></div>
+      
       {/* Sidebar */}
-      <div className="w-[80px] md:w-[280px] border-r border-white/10 flex flex-col shrink-0 bg-[#0a0a0a] overflow-y-auto no-scrollbar">
-        <div className="px-4 md:px-8 py-6 mb-2 flex items-center md:items-start flex-col gap-1 border-b border-white/10">
-          <div className="w-10 h-10 bg-eterna-red rounded-full flex items-center justify-center shrink-0 cursor-pointer mb-2 shadow-[0_0_15px_rgba(229,9,20,0.5)]" onClick={() => go('landing')}>
-            <ArrowLeft className="w-5 h-5 text-white" />
+      <div className="w-[80px] md:w-[280px] border-r border-[#00D9FF]/15 flex flex-col shrink-0 bg-[#060a16] relative overflow-hidden backdrop-blur-xl z-20">
+        <div className="absolute top-0 right-0 w-[180px] h-[180px] bg-[#00D9FF]/5 rounded-full filter blur-[40px] pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-[120px] h-[120px] bg-[#3CAEFF]/5 rounded-full filter blur-[30px] pointer-events-none"></div>
+
+        <div className="px-4 md:px-6 py-6 mb-2 flex items-center md:items-start flex-col gap-1 border-b border-[#00D9FF]/15">
+          <div 
+            className="w-10 h-10 rounded-full bg-[#00D9FF]/10 border border-[#00D9FF]/30 flex items-center justify-center shrink-0 cursor-pointer mb-2 hover:bg-[#00D9FF]/20 active:scale-95 transition-all text-[#00D9FF] shadow-[0_0_15px_rgba(0,217,255,0.3)]" 
+            onClick={() => go('landing')}
+            title="Return to Main Presentation Portal"
+          >
+            <ArrowLeft className="w-5 h-5" />
           </div>
           <div className="hidden md:block">
-            <span className="font-bold text-xl text-white tracking-tight leading-none block">Streaming OS</span>
-            <span className="text-[10px] uppercase text-eterna-red tracking-wider font-bold shadow-eterna-red">Super Administrator</span>
+            <span className="font-mono font-black text-xs tracking-[0.25em] text-[#00D9FF] block mb-1">ETERNA GLOBAL</span>
+            <span className="font-bold text-lg text-white font-mono tracking-tight leading-none block">MISSION CONTROL</span>
+            <span className="text-[9px] uppercase text-[#F5B041] tracking-widest font-mono font-bold mt-1 block">Super Administrator</span>
           </div>
         </div>
 
-        <div className="flex flex-col gap-1 px-3 py-4">
-          <div className="text-[10px] text-white/40 uppercase tracking-widest px-3 mb-1 mt-2 font-semibold">Executive Hub</div>
-          <NavItem active={activeMenu === 'dashboard'} icon={<LayoutDashboard />} label="CEO Dashboard" onClick={() => setActiveMenu('dashboard')} />
-          <NavItem active={activeMenu === 'revenue'} icon={<DollarSign />} label="Monetization Engine" onClick={() => setActiveMenu('revenue')} />
-          <NavItem active={activeMenu === 'ai'} icon={<Brain />} label="AI Command Center" onClick={() => setActiveMenu('ai')} />
+        {/* Scrollable Nav Area */}
+        <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-1 px-3 py-4">
+          <div className="text-[9px] text-[#00D9FF]/50 font-mono uppercase tracking-[0.2em] px-3 mb-2 font-bold">Executive Suite</div>
+          <NavItem active={activeMenu === 'dashboard'} icon={<LayoutDashboard />} label="Ops Dashboard" onClick={() => setActiveMenu('dashboard')} />
+          <NavItem active={activeMenu === 'revenue'} icon={<DollarSign />} label="Revenue Engine" onClick={() => setActiveMenu('revenue')} />
+          <NavItem active={activeMenu === 'ai'} icon={<Brain />} label="AI Synthesizer" onClick={() => setActiveMenu('ai')} />
 
-          <div className="text-[10px] text-white/40 uppercase tracking-widest px-3 mb-1 mt-5 font-semibold">Content & Creators</div>
-          <NavItem active={activeMenu === 'acquisition'} icon={<FileCheck />} label="Acqusition & AI Review" onClick={() => setActiveMenu('acquisition')} />
-          <NavItem active={activeMenu === 'library'} icon={<Film />} label="Global Library & DRM" onClick={() => setActiveMenu('library')} />
-          <NavItem active={activeMenu === 'creators'} icon={<Users />} label="Studio & Originals" onClick={() => setActiveMenu('creators')} />
-          <NavItem active={activeMenu === 'marketplace'} icon={<ShoppingBag />} label="Marketplace Engine" onClick={() => setActiveMenu('marketplace')} />
+          <div className="text-[9px] text-[#00D9FF]/50 font-mono uppercase tracking-[0.2em] px-3 mb-2 mt-6 font-bold">Content Ingestion</div>
+          <NavItem active={activeMenu === 'acquisition'} icon={<FileCheck />} label="Rights Ingestion & AI" onClick={() => setActiveMenu('acquisition')} />
+          <NavItem active={activeMenu === 'library'} icon={<Film />} label="Global Vault & DRM" onClick={() => setActiveMenu('library')} />
+          <NavItem active={activeMenu === 'creators'} icon={<Users />} label="Studio Co-op" onClick={() => setActiveMenu('creators')} />
+          <NavItem active={activeMenu === 'marketplace'} icon={<ShoppingBag />} label="Film Marketplace" onClick={() => setActiveMenu('marketplace')} />
 
-          <div className="text-[10px] text-white/40 uppercase tracking-widest px-3 mb-1 mt-5 font-semibold">Audience & Operations</div>
-          <NavItem active={activeMenu === 'audience'} icon={<UserCheck />} label="Audience Intel & A/B" onClick={() => setActiveMenu('audience')} />
-          <NavItem active={activeMenu === 'ads'} icon={<Megaphone />} label="Ad Management (AVOD)" onClick={() => setActiveMenu('ads')} />
-          <NavItem active={activeMenu === 'streaming'} icon={<Activity />} label="CDN & Live Streaming" onClick={() => setActiveMenu('streaming')} />
-          <NavItem active={activeMenu === 'moderation'} icon={<ShieldAlert />} label="Enterprise Audit" onClick={() => setActiveMenu('moderation')} />
+          <div className="text-[9px] text-[#00D9FF]/50 font-mono uppercase tracking-[0.2em] px-3 mb-2 mt-6 font-bold">Telemetry Ops</div>
+          <NavItem active={activeMenu === 'audience'} icon={<UserCheck />} label="A/B Brain Intel" onClick={() => setActiveMenu('audience')} />
+          <NavItem active={activeMenu === 'ads'} icon={<Megaphone />} label="AVOD Monetizer" onClick={() => setActiveMenu('ads')} />
+          <NavItem active={activeMenu === 'streaming'} icon={<Activity />} label="CDN & Bitrate Matrix" onClick={() => setActiveMenu('streaming')} />
+          <NavItem active={activeMenu === 'moderation'} icon={<ShieldAlert />} label="Sec Compliance Logs" onClick={() => setActiveMenu('moderation')} />
+        </div>
+
+        {/* System telemetry bottom status */}
+        <div className="p-4 border-t border-[#00D9FF]/10 font-mono text-[9px] text-white/30 hidden md:block select-none bg-[#040710]">
+           <div>SECURE NODE // AUTH_CORP</div>
+           <div className="text-green-500/80 font-bold flex items-center gap-1 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></span>
+              FEDERATED SHIELD ENGAGED
+           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto no-scrollbar relative min-h-0 bg-[#080808]">
-        <NotificationCenter />
-        {renderContent()}
+      {/* Main Content Dashboard Frame */}
+      <div className="flex-1 overflow-hidden relative flex flex-col bg-[#030612]">
+        {/* Absolute High-Tech Top Film/Movie Space Telemetry Bar */}
+        <div className="border-b border-[#00D9FF]/15 bg-[#05091a]/85 backdrop-blur px-6 py-2.5 flex items-center justify-between text-[11px] font-mono text-[#00D9FF] shrink-0 tracking-widest z-10 select-none shadow-[0_2px_15px_rgba(0,0,0,0.4)]">
+           <div className="flex items-center gap-4">
+              <span className="flex items-center gap-2 font-bold text-white uppercase">
+                 <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse inline-block"></span>
+                 SYS FEED: SUPER_ADMIN
+              </span>
+              <span className="text-white/20">|</span>
+              <span className="text-white/70">SMPTE TC: <span className="text-white bg-black/60 px-2 py-0.5 rounded border border-[#00D9FF]/20 font-bold">{currentTimecode}</span></span>
+              <span className="text-white/20 hidden sm:inline">|</span>
+              <span className="text-white/70 hidden sm:inline">SAT: <span className="text-green-400 font-bold">SYNC_OK</span></span>
+           </div>
+           
+           <div className="flex items-center gap-5 hidden xl:flex text-white/50">
+              <span>SHUTTER: <span className="text-white font-semibold">180.0°</span></span>
+              <span>ISO: <span className="text-white font-semibold">800</span></span>
+              <span>LENS: <span className="text-white font-semibold">ANAMORPHIC 2.39:1</span></span>
+              <span>FEEDSTREAM: <span className="text-[#00D9FF] font-bold">8K REDCODE RAW</span></span>
+              <span className="text-white/20">|</span>
+              <span className="text-white/80 bg-[#00D9FF]/10 border border-[#00D9FF]/20 px-2 py-0.5 rounded text-[10px]">AES-256 DRM KEY SECURED</span>
+           </div>
+           
+           <div className="flex items-center gap-2">
+              <span className="bg-[#F5B041]/10 text-[#F5B041] border border-[#F5B041]/30 px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider animate-pulse">UTC REALTIME</span>
+           </div>
+        </div>
+
+        {/* Dynamic content rendering zone with custom ambient styling & transparent scroll */}
+        <div className="flex-1 overflow-y-auto no-scrollbar relative min-h-0">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#00D9FF]/5 via-transparent to-transparent pointer-events-none"></div>
+          <NotificationCenter />
+          {renderContent()}
+        </div>
       </div>
       
       {workflowDetails && <SuperAdminWorkflowModal details={workflowDetails} onClose={() => setWorkflowDetails(null)} />}
@@ -141,26 +206,56 @@ function NavItem({ active, icon, label, onClick }: any) {
   return (
     <div 
       onClick={onClick}
-      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-        active ? 'bg-eterna-red text-white shadow-lg' : 'text-white/60 hover:bg-white/5 hover:text-white'
+      className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all duration-300 group ${
+        active 
+          ? 'bg-[#00D9FF]/10 text-[#00D9FF] border border-[#00D9FF]/30 shadow-[0_0_12px_rgba(0,217,255,0.15)] font-bold' 
+          : 'text-white/60 hover:bg-white/5 hover:text-white border border-transparent'
       }`}
     >
-      <div className="shrink-0">{React.cloneElement(icon, { className: 'w-[18px] h-[18px]' })}</div>
-      <div className="hidden md:block font-medium text-[13px]">{label}</div>
+      <div className="flex items-center gap-3">
+         <div className={`shrink-0 transition-transform duration-300 group-hover:scale-110 ${active ? 'text-[#00D9FF]' : 'text-white/50'}`}>
+           {React.cloneElement(icon, { className: 'w-4 h-4' })}
+         </div>
+         <div className="hidden md:block font-mono text-[11px] uppercase tracking-wider">{label}</div>
+      </div>
+      {active && (
+         <div className="w-1.5 h-1.5 rounded-full bg-[#00D9FF] shadow-[0_0_8px_#00D9FF] hidden md:block"></div>
+      )}
     </div>
   );
 }
 
-function MetricCard({ label, value, status, type = 'normal' }: any) {
+function MetricCard({ label, value, status, type = 'normal', icon }: any) {
   const isWarn = type === 'warning';
   const isErr = type === 'error';
-  const colorClass = isErr ? 'text-red-400' : isWarn ? 'text-yellow-400' : 'text-green-400';
+  const colorClass = isErr ? 'text-[#FF4A4A]' : isWarn ? 'text-yellow-400' : 'text-[#00D9FF]';
   
   return (
-    <div className="bg-[#111] p-5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-      <div className="text-[13px] text-white/50 mb-2 font-medium uppercase tracking-wider">{label}</div>
-      <div className="text-2xl font-bold mb-2">{value}</div>
-      <div className={`text-[12px] font-bold ${colorClass}`}>{status}</div>
+    <div className="bg-[#090D22]/60 backdrop-blur-md p-5 rounded-xl border border-[#00D9FF]/20 relative overflow-hidden group hover:border-[#00D9FF]/55 transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+      {/* Corner brackets */}
+      <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-[#00D9FF]/40 rounded-tl"></div>
+      <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-[#00D9FF]/40 rounded-tr"></div>
+      <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-[#00D9FF]/40 rounded-bl"></div>
+      <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-[#00D9FF]/40 rounded-br"></div>
+      
+      {/* Wave pattern badge in background */}
+      <div className="absolute right-2 bottom-1 text-white/5 opacity-5 font-mono select-none text-[32px] font-bold pointer-events-none">
+        MTR_01
+      </div>
+
+      <div className="flex justify-between items-start mb-2">
+         <div className="text-[10px] text-white/40 font-mono uppercase tracking-widest">{label}</div>
+         {icon && <div className="text-[#00D9FF]/60">{React.cloneElement(icon, { className: 'w-4 h-4' })}</div>}
+      </div>
+      
+      <div className="text-3xl font-bold font-mono tracking-tight text-white mb-2 flex items-baseline gap-1">
+        {value}
+      </div>
+      
+      <div className="flex items-center gap-1.5">
+         <span className={`text-[11px] font-mono font-semibold ${colorClass}`}>{status}</span>
+         <span className="text-[9px] text-white/30 font-mono">LIVE FEED</span>
+      </div>
     </div>
   );
 }
@@ -194,47 +289,154 @@ function Dashboard({ triggerWorkflow }: any) {
   ];
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300">
-      <h1 className="text-3xl font-bold mb-2">CEO Executive Dashboard</h1>
-      <p className="text-white/50 mb-8">Real-time overview of global platform performance, revenue, and subscriber growth.</p>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <MetricCard label="Total Content" value="42,854" status="+12% YoY" />
-        <MetricCard label="Total Subscribers" value="18.4M" status="+8.4% YoY" />
-        <MetricCard label="Monthly Rev (MRR)" value="$112.5M" status="+14% YoY" />
-        <MetricCard label="Churn Rate" value="2.1%" status="-0.3% Improved" />
+    <div className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[#00D9FF]/10 pb-6 gap-4">
+        <div>
+          <div className="text-[10px] font-mono tracking-[0.3em] text-[#00D9FF] uppercase mb-1">CENTRAL PROCESSING COMMAND</div>
+          <h1 className="text-3xl font-bold font-mono tracking-tight text-white flex items-center gap-3">
+             <Film className="w-8 h-8 text-[#00D9FF] animate-pulse" /> ETERNA STUDIO CENTRAL OPS
+          </h1>
+          <p className="text-white/40 text-sm mt-1">Holographic overview of movie distribution grids, financial pipelines, and AI metadata ingestion.</p>
+        </div>
+        <div className="flex gap-3">
+           <div className="bg-[#090D22]/80 border border-[#00D9FF]/20 px-4 py-2 rounded-lg text-xs font-mono flex flex-col justify-center">
+              <span className="text-white/40">SECURE CONSOLE</span>
+              <span className="text-[#00D9FF] font-black">STATION_DECK_4A</span>
+           </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 bg-[#111] border border-white/5 p-6 rounded-xl">
+      {/* Production Telemetry Section (VIP) */}
+      <div className="bg-[#09112C]/40 border border-[#00D9FF]/15 backdrop-blur-md rounded-xl p-6 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#00D9FF]/5 rounded-full filter blur-[150px] pointer-events-none"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none"></div>
+        
+        <div className="flex flex-col lg:flex-row justify-between gap-6 relative z-10">
+          <div>
+            <div className="text-[10px] font-mono text-[#00D9FF] uppercase tracking-[0.25em] mb-2 flex items-center gap-1.5 font-bold">
+              <span className="w-2 h-2 rounded-full bg-[#00D9FF] animate-ping"></span>
+              LIVE PLATFORM RENDERING PORT
+            </div>
+            <h2 className="text-2xl font-bold font-mono tracking-tight">STUDIO MASTER CONTROLS</h2>
+            <p className="text-white/60 text-sm mt-1 max-w-2xl leading-relaxed">
+              Global content distribution rights and studio metrics synced across multiple edge cache points. Access ingest telemetry, Dolby encoders, and AES keys.
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="border border-[#00D9FF]/20 bg-black/40 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
+              <span className="text-[9px] text-[#00D9FF]/60 font-mono tracking-wider">LENS COEFF</span>
+              <span className="text-base font-bold font-mono text-white">35MM T1.5</span>
+            </div>
+            <div className="border border-[#00D9FF]/20 bg-black/40 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
+              <span className="text-[9px] text-[#00D9FF]/60 font-mono tracking-wider">MATTE DEPTH</span>
+              <span className="text-base font-bold font-mono text-white">2.39:1 CIN</span>
+            </div>
+            <div className="border border-[#00D9FF]/20 bg-black/40 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
+              <span className="text-[9px] text-[#00D9FF]/60 font-mono tracking-wider">INGEST RATE</span>
+              <span className="text-base font-bold font-mono text-[#00D9FF]">9.2 Gbps</span>
+            </div>
+            <div className="border border-[#00D9FF]/20 bg-black/40 rounded-lg p-3 flex flex-col items-center min-w-[100px]">
+              <span className="text-[9px] text-yellow-400 font-mono tracking-wider">COLOUR PRO</span>
+              <span className="text-base font-bold font-mono text-yellow-400">ACES CC</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Real-time movie monitor feeds */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+           <div className="aspect-video bg-[#040713] rounded-lg border border-[#00D9FF]/15 overflow-hidden relative group/cam">
+              <img src="https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=300&fit=crop" className="w-[100%] h-[100%] object-cover opacity-50 duration-700 group-hover/cam:scale-105" alt="Camera Feed 1" />
+              <div className="absolute top-2 left-2 text-[9px] font-mono bg-black/80 border border-[#00D9FF]/40 px-1.5 py-0.5 rounded text-[#00D9FF]">CAM_A (8K RAW)</div>
+              <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/60 px-1.5 py-0.5 rounded text-[8px] font-mono text-white/60">
+                 <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
+                 REC (LUT ON)
+              </div>
+           </div>
+           <div className="aspect-video bg-[#040713] rounded-lg border border-[#00D9FF]/15 overflow-hidden relative group/cam">
+              <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=300&fit=crop" className="w-[100%] h-[100%] object-cover opacity-50 duration-700 group-hover/cam:scale-105" alt="Camera Feed 2" />
+              <div className="absolute top-2 left-2 text-[9px] font-mono bg-black/80 border border-[#00D9FF]/40 px-1.5 py-0.5 rounded text-[#00D9FF]">CAM_B (6K PRO)</div>
+              <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/60 px-1.5 py-0.5 rounded text-[8px] font-mono text-white/50">
+                 <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
+                 HDR 10+
+              </div>
+           </div>
+           <div className="aspect-video bg-[#040713] rounded-lg border border-[#00D9FF]/15 overflow-hidden relative group/cam">
+              <img src="https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=300&fit=crop" className="w-[100%] h-[100%] object-cover opacity-50 duration-700 group-hover/cam:scale-105" alt="Camera Feed 3" />
+              <div className="absolute top-2 left-2 text-[9px] font-mono bg-black/80 border border-[#00D9FF]/40 px-1.5 py-0.5 rounded text-[#00D9FF]">CAM_C (REMOTE)</div>
+              <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/60 px-1.5 py-0.5 rounded text-[8px] font-mono text-green-400">
+                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping"></span>
+                 SAT_SAT_OK
+              </div>
+           </div>
+           <div className="aspect-video bg-[#040713] rounded-lg border border-[#00D9FF]/15 overflow-hidden relative group/cam">
+              <img src="https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?q=80&w=300&fit=crop" className="w-[100%] h-[100%] object-cover opacity-50 duration-700 group-hover/cam:scale-105" alt="Camera Feed 4" />
+              <div className="absolute top-2 left-2 text-[9px] font-mono bg-black/80 border border-[#00D9FF]/40 px-1.5 py-0.5 rounded text-[#00D9FF]">MASTER_OUT (E_CDN)</div>
+              <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/60 px-1.5 py-0.5 rounded text-[8px] font-mono text-[#00D9FF]">
+                 <span className="w-1.5 h-1.5 rounded-full bg-[#00D9FF]"></span>
+                 BROADCASTING
+              </div>
+           </div>
+        </div>
+      </div>
+
+      {/* Metrics Dashboard */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <MetricCard label="Vault Assets" value="42,854" status="+12.0% annual" icon={<Film />} />
+        <MetricCard label="Worldwide Subs" value="18.42M" status="+8.4% monthly" icon={<Users />} />
+        <MetricCard label="Current MRR" value="$112.5M" status="+14.0% weekly" icon={<DollarSign />} />
+        <MetricCard label="User Defection" value="2.15%" status="-0.3% Improved" icon={<Activity />} type="warning" />
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Genre ROI Bar */}
+        <div className="lg:col-span-2 bg-[#090D22]/60 border border-[#00D9FF]/15 p-6 rounded-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-[#00D9FF]/20 rounded-tr"></div>
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-[#00D9FF]/20 rounded-bl"></div>
+
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Content Performance & ROI by Genre</h2>
-            <button onClick={() => triggerWorkflow({
-               title: "ROI & Performance Reporter",
-               endpoint: "/analytics/reports/ceo-performance",
-               steps: [
-                 "Compile Global Viewing Data",
-                 "Calculate Revenue Attribution",
-                 "Format Executive Briefing",
-                 "Deliver to Executive Inbox"
-               ]
-            })} className="text-[12px] bg-white/10 px-3 py-1 rounded hover:bg-white/20">Generate Report</button>
+            <div>
+              <span className="text-[10px] font-mono text-[#00D9FF]/55 tracking-widest block uppercase mb-1">DATA ANALYST DECK // G_ROI</span>
+              <h2 className="text-lg font-bold font-mono">CONTENT PERFORMANCE BY GENRE</h2>
+            </div>
+            <button 
+              onClick={() => triggerWorkflow({
+                 title: "ROI & Performance Reporter",
+                 endpoint: "/analytics/reports/ceo-performance",
+                 steps: [
+                   "Compile Global Viewing Data",
+                   "Calculate Revenue Attribution",
+                   "Format Executive Briefing",
+                   "Deliver to Executive Inbox"
+                 ]
+              })} 
+              className="text-[10.5px] font-mono border border-[#00D9FF]/30 bg-[#00D9FF]/10 text-[#00D9FF] px-3.5 py-1.5 rounded hover:bg-[#00D9FF]/20 transition-all uppercase tracking-wider"
+            >
+              Generate Report
+            </button>
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={genreData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                <XAxis dataKey="name" stroke="#888" tick={{fontSize: 12}} />
-                <YAxis stroke="#888" tick={{fontSize: 12}} />
-                <Tooltip cursor={{fill: '#222'}} contentStyle={{backgroundColor: '#000', borderColor: '#333'}} />
-                <Bar dataKey="value" fill="#E50914" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#121a36" vertical={false} />
+                <XAxis dataKey="name" stroke="#526488" tick={{fontSize: 10, fontFamily: 'monospace'}} />
+                <YAxis stroke="#526488" tick={{fontSize: 10, fontFamily: 'monospace'}} />
+                <Tooltip cursor={{fill: 'rgba(0, 217, 255, 0.05)'}} contentStyle={{backgroundColor: '#050a1a', borderColor: '#00D9FF'}} labelStyle={{fontFamily: 'monospace', color: '#00D9FF'}} />
+                <Bar dataKey="value" fill="#00D9FF" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-[#111] border border-white/5 p-6 rounded-xl flex flex-col">
-          <h2 className="text-xl font-bold mb-4">Global Market Expansion</h2>
+        {/* Global Market */}
+        <div className="bg-[#090D22]/60 border border-[#00D9FF]/15 p-6 rounded-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-[#00D9FF]/20 rounded-tr"></div>
+          <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-[#00D9FF]/20 rounded-bl"></div>
+
+          <span className="text-[10px] font-mono text-[#00D9FF]/55 tracking-widest block uppercase mb-1">REGIONAL MATRICES</span>
+          <h2 className="text-lg font-bold font-mono mb-6">GLOBAL EXPANSION FEED</h2>
+          
           <div className="space-y-4 flex-1">
              <RegionRow name="North America" val="8.2M subs" pct="45" />
              <RegionRow name="Europe" val="5.1M subs" pct="32" />
@@ -245,21 +447,36 @@ function Dashboard({ triggerWorkflow }: any) {
         </div>
       </div>
 
-      <div className="bg-[#111] border border-white/5 p-6 rounded-xl h-[350px] flex flex-col">
-        <h2 className="text-xl font-bold mb-4">Monthly Recurring Revenue (MRR) Trends</h2>
+      {/* MRR Stream Area */}
+      <div className="bg-[#090D22]/60 border border-[#00D9FF]/15 p-6 rounded-xl relative overflow-hidden flex flex-col h-[350px]">
+        <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-[#00D9FF]/20 rounded-tr"></div>
+        <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-[#00D9FF]/20 rounded-bl"></div>
+
+        <div>
+          <span className="text-[10px] font-mono text-[#00D9FF]/55 tracking-widest block uppercase mb-1">FINOPS SENSORS</span>
+          <h2 className="text-lg font-bold font-mono mb-4">MONTHLY RECURRING REVENUE (MRR) PIPELINE</h2>
+        </div>
+        
         <div className="flex-1 w-full min-h-0">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={mrrData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-              <XAxis dataKey="month" stroke="#888" tick={{fontSize: 12}} />
-              <YAxis stroke="#888" tick={{fontSize: 12}} tickFormatter={(val) => `$${val}M`} />
+            <AreaChart data={mrrData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="mrrGlow" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#00D9FF" stopOpacity={0.25}/>
+                  <stop offset="95%" stopColor="#00D9FF" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#121a36" vertical={false} />
+              <XAxis dataKey="month" stroke="#526488" tick={{fontSize: 10, fontFamily: 'monospace'}} />
+              <YAxis stroke="#526488" tick={{fontSize: 10, fontFamily: 'monospace'}} tickFormatter={(val) => `$${val}M`} />
               <Tooltip 
-                contentStyle={{backgroundColor: '#111', borderColor: '#333', borderRadius: '8px'}} 
-                itemStyle={{color: '#fff'}}
+                contentStyle={{backgroundColor: '#050a1a', borderColor: '#00D9FF', borderRadius: '8px'}} 
+                itemStyle={{color: '#fff', fontFamily: 'monospace'}}
+                labelStyle={{color: '#00D9FF', fontFamily: 'monospace'}}
                 formatter={(value: any) => [`$${value}M`, 'MRR']} 
               />
-              <Line type="monotone" dataKey="mrr" stroke="#E50914" strokeWidth={3} dot={{r: 4, fill: '#E50914'}} activeDot={{r: 6}} />
-            </LineChart>
+              <Area type="monotone" dataKey="mrr" stroke="#00D9FF" fillOpacity={1} fill="url(#mrrGlow)" strokeWidth={2} dot={{r: 3, fill: '#00D9FF'}} activeDot={{r: 6}} />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
@@ -269,13 +486,13 @@ function Dashboard({ triggerWorkflow }: any) {
 
 function RegionRow({ name, val, pct }: any) {
   return (
-    <div>
-      <div className="flex justify-between text-[13px] mb-1">
+    <div className="font-mono">
+      <div className="flex justify-between text-[11px] mb-1.5 uppercase tracking-wider text-white/80">
         <span>{name}</span>
-        <span className="text-white/50">{val}</span>
+        <span className="text-[#00D9FF] font-bold">{val}</span>
       </div>
-      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-        <div className="h-full bg-eterna-red rounded-full" style={{ width: `${pct}%` }}></div>
+      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+        <div className="h-full bg-gradient-to-r from-[#00D9FF]/40 to-[#00D9FF] rounded-full shadow-[0_0_8px_#00D9FF]" style={{ width: `${pct}%` }}></div>
       </div>
     </div>
   );
@@ -375,96 +592,115 @@ function AcquisitionCenter({ triggerWorkflow }: any) {
   };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto h-full flex flex-col animate-in fade-in duration-300">
-      <div className="mb-6 flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Acquisition Workspace & AI Review</h1>
-          <p className="text-white/50">Manage incoming film submissions and editorial approvals based on AI scanning scores.</p>
-        </div>
+    <div className="p-8 max-w-[1600px] mx-auto h-full flex flex-col animate-in fade-in duration-300 space-y-6">
+      <div className="border-b border-[#00D9FF]/10 pb-4">
+        <span className="text-[10px] font-mono tracking-[0.3em] text-[#00D9FF] uppercase block mb-1">INTENSE EDITORIAL SCREENING UNIT</span>
+        <h1 className="text-3xl font-bold font-mono tracking-tight text-white flex items-center gap-2">
+           <Video className="w-8 h-8 text-[#00D9FF]" /> RIGHTS INGESTION & AUDIT WORKSPACE
+        </h1>
+        <p className="text-white/40 text-sm mt-1">Review legal documentation, title compliance records, and smart AI screening confidence scores.</p>
       </div>
 
-      <div className="flex gap-6 flex-1 min-h-0">
-        <div className="w-[45%] bg-[#111] border border-white/5 rounded-xl flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-white/5 font-semibold bg-[#1a1a1a]">Intake Queue</div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-[500px]">
+        {/* Intake Queue Column */}
+        <div className="w-full lg:w-[45%] bg-[#090D22]/60 border border-[#00D9FF]/15 rounded-xl flex flex-col overflow-hidden backdrop-blur-md relative">
+          <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-[#00D9FF]/40"></div>
+          <div className="p-4 border-b border-[#00D9FF]/10 font-mono text-xs uppercase tracking-wider text-[#00D9FF] bg-[#070b18]/80 flex justify-between items-center">
+             <span>Intake Digital Queue</span>
+             <span className="bg-[#00D9FF]/10 text-[#00D9FF] px-2 py-0.5 rounded text-[10px] font-bold">READY TO SCAN</span>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
             {submissions.map(s => (
               <div 
                 key={s.id} 
-                className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedSub?.id === s.id ? 'border-eterna-red bg-white/5' : 'border-white/10 hover:border-white/30 bg-black/20'}`}
+                className={`p-4 border rounded-lg cursor-pointer transition-all duration-300 ${selectedSub?.id === s.id ? 'border-[#00D9FF] bg-[#00D9FF]/10 shadow-[0_0_12px_rgba(0,217,255,0.15)] font-bold' : 'border-[#00D9FF]/10 hover:border-[#00D9FF]/30 bg-black/20 text-white/80'}`}
                 onClick={() => { setSelectedSub(s); setShowRejectReason(false); }}
               >
-                <div className="flex justify-between mb-2">
-                  <div className="font-bold">{s.title}</div>
-                  <div className="text-[11px] px-2 py-0.5 rounded-full bg-white/10">{s.status}</div>
+                <div className="flex justify-between mb-2 items-center">
+                  <div className="font-mono text-sm text-white">{s.title}</div>
+                  <div className="text-[9px] font-mono border border-[#00D9FF]/30 px-2 py-0.5 rounded bg-[#00D9FF]/5 text-white/70">{s.status}</div>
                 </div>
-                <div className="flex justify-between text-[13px] text-white/50">
+                <div className="flex justify-between items-center text-xs text-white/50 font-mono">
                   <span>{s.creator} • {s.type}</span>
-                  {s.score > 0 && <span className={s.score >= 75 ? 'text-green-400 font-bold' : 'text-yellow-400 font-bold'}>AI Score: {s.score}</span>}
+                  {s.score > 0 && (
+                    <span className={s.score >= 75 ? 'text-green-400 font-bold' : 'text-yellow-400 font-bold'}>
+                      AI ASSIST: {s.score}%
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="w-[55%] flex flex-col min-h-0 bg-[#111] border border-white/5 rounded-xl">
+        {/* Detailed Inspection Column */}
+        <div className="w-full lg:w-[55%] flex flex-col min-h-0 bg-[#090D22]/60 border border-[#00D9FF]/15 rounded-xl backdrop-blur-md relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-[#00D9FF]/40"></div>
           {selectedSub ? (
-            <div className="flex-1 flex flex-col overflow-y-auto p-6">
-              <div className="text-[12px] text-white/50 mb-1">{selectedSub.id}</div>
-              <h2 className="text-2xl font-bold mb-1">{selectedSub.title}</h2>
-              <div className="text-[14px] text-white/60 mb-6">{selectedSub.creator} ({selectedSub.email}) • {selectedSub.type} • USA</div>
+            <div className="flex-1 flex flex-col p-6 overflow-y-auto">
+              <div className="text-[10px] font-mono text-[#00D9FF] mb-1">ASSET ENGINE REF // {selectedSub.id}</div>
+              <h2 className="text-2xl font-bold font-mono tracking-tight mb-2 text-white">{selectedSub.title}</h2>
+              <div className="text-xs font-mono text-white/50 mb-6 pb-4 border-b border-[#00D9FF]/10">
+                 PRODUCER: <span className="text-white font-medium">{selectedSub.creator} ({selectedSub.email})</span> • FORMAT: <span className="text-[#00D9FF]">{selectedSub.type}</span>
+              </div>
               
-              <h3 className="font-semibold mb-3 border-b border-white/10 pb-2">Mandatory Acquisition Checklist</h3>
-              <div className="space-y-3 mb-6">
-                <CheckItem label="Copyright Verification & Chain of Title" pass />
-                <CheckItem label="Exclusive Distribution Rights" pass />
-                <CheckItem label="Music Licensing & Sync" pass />
-                <CheckItem label="Errors and Omissions (E&O) Insurance" pass={false} />
-                <CheckItem label="Technical Compliance (4K, ProRes, Dolby)" pass />
-                <CheckItem label="Marketing Assets (Key Art, Trailer)" pass />
+              <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-[#00D9FF] mb-3 pb-1">MANDATORY DRMS & CHAIN OF TITLE VERIFICATION</h3>
+              <div className="space-y-3.5 mb-6">
+                <CheckItem label="Chain of Title, Legal Assignments & Copyright Certifications" pass />
+                <CheckItem label="Exclusive Interactive VOD Worldwide Streaming Allocation" pass />
+                <CheckItem label="Sync Licensing & Sound Recording Master Rights cleared" pass />
+                <CheckItem label="Errors and Omissions (E&O) Insurance Cover active" pass={false} />
+                <CheckItem label="UHD ProRes 422 Master & Dolby Atmos Compliance Check" pass />
+                <CheckItem label="Promotional Keyart, Backdrops, Metadata Schemas & Trailers" pass />
               </div>
 
-              <div className="mb-6 border border-white/10 rounded-lg bg-black/20 overflow-hidden flex flex-col">
-                 <div className="p-3 border-b border-white/10 bg-[#1a1a1a] font-semibold text-[13px] text-white/80">Audit Log</div>
-                 <div className="p-4 space-y-3 max-h-[120px] overflow-y-auto text-[13px] flex-1">
+              <div className="mb-6 border border-[#22d3ee]/20 rounded-lg bg-black/40 overflow-hidden flex flex-col">
+                 <div className="p-2.5 border-b border-[#00D9FF]/10 bg-[#070e24] font-mono text-[10px] uppercase text-[#00D9FF] tracking-wider">System Audit Core Logs</div>
+                 <div className="p-3.5 space-y-2 max-h-[140px] overflow-y-auto text-xs font-mono flex-1 text-white/70">
                    {(auditLogs[selectedSub.id] || []).map((log: any, i: number) => (
-                     <div key={i} className="flex gap-4">
-                       <span className="text-white/40 whitespace-nowrap font-mono">{log.time}</span>
-                       <span><span className="font-semibold text-white/80">{log.user}:</span> <span className="text-white/60">{log.action}</span></span>
-                     </div>
+                      <div key={i} className="flex gap-4">
+                        <span className="text-white/30 whitespace-nowrap">{log.time}</span>
+                        <span><span className="font-bold text-[#00D9FF]">{log.user}:</span> <span>{log.action}</span></span>
+                      </div>
                    ))}
                  </div>
               </div>
 
               <div className="mt-auto pt-4 flex flex-col gap-3">
                 {showRejectReason && (
-                  <div className="bg-black/60 p-4 rounded-lg border border-white/10 mb-2 animate-in fade-in zoom-in-95 duration-200">
-                    <div className="text-[13px] font-semibold text-white/80 mb-2">Select Reason for Rejection/Revision:</div>
+                  <div className="bg-[#05091a]/95 p-4 rounded-lg border border-red-500/30 mb-2 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="text-xs font-mono font-semibold text-white/80 mb-2">SELECT RETRACT OR REVISE EXCEPTION CODES:</div>
                     <select 
-                      className="w-full bg-[#222] border border-white/20 rounded p-2 mb-3 text-[14px] outline-none"
+                      className="w-full bg-black/85 border border-[#00D9FF]/20 text-[#00D9FF] rounded-lg p-2.5 mb-3 text-xs font-mono outline-none focus:border-[#00D9FF]"
                       value={rejectReason}
                       onChange={(e) => setRejectReason(e.target.value)}
                     >
-                      <option>Missing E&O Insurance</option>
-                      <option>Legal / Copyright Disputes</option>
-                      <option>Technical Quality Flaws</option>
-                      <option>Content Policy Violation</option>
+                      <option>Missing E&O Insurance Policy</option>
+                      <option>Legal / Copyright Disputes Pending</option>
+                      <option>Technical Compression / Audio Flaws detected</option>
+                      <option>Content Metadata Policy Discrepancies</option>
                     </select>
                     <div className="flex gap-2">
-                       <button className="flex-1 bg-red-600 hover:bg-red-700 py-2 rounded font-bold text-[13px]" onClick={() => handleAction('Rejected')}>Confirm Rejection</button>
-                       <button className="flex-1 bg-yellow-600 hover:bg-yellow-700 py-2 rounded font-bold text-[13px]" onClick={() => handleAction('Request Revisions')}>Require Revisions</button>
+                       <button className="flex-1 bg-red-600 hover:bg-red-700 py-2.5 rounded font-mono font-bold text-xs uppercase tracking-wider text-white" onClick={() => handleAction('Rejected')}>DEACTIVATE & REJECT</button>
+                       <button className="flex-1 bg-yellow-600 hover:bg-yellow-700 py-2.5 rounded font-mono font-bold text-xs uppercase tracking-wider text-white" onClick={() => handleAction('Request Revisions')}>REQUEST CORRECTION</button>
                     </div>
                   </div>
                 )}
                 <div className="flex gap-3">
-                  <button className="flex-1 bg-green-600 hover:bg-green-700 p-3 rounded font-bold text-[14px] transition-colors" onClick={() => handleAction('Approved')}>Final Approval</button>
-                  <button className="flex-1 bg-[#222] hover:bg-[#333] border border-white/10 p-3 rounded font-bold text-[14px] transition-colors" onClick={() => setShowRejectReason(!showRejectReason)}>
-                     {showRejectReason ? 'Cancel' : 'Reject / Revise'}
+                  <button className="flex-1 bg-[#00D9FF] hover:bg-[#00c2e6] text-black p-3.5 rounded-lg font-mono font-black text-sm uppercase tracking-widest transition-all duration-200 shadow-[0_0_15px_rgba(0,217,255,0.3)]" onClick={() => handleAction('Approved')}>
+                     EXECUTE ENCRYPTION & BROADCAST
+                  </button>
+                  <button className="flex-1 bg-black/60 hover:bg-black/90 border border-[#00D9FF]/30 p-3.5 text-[#00D9FF] rounded-lg font-mono font-bold text-xs uppercase tracking-wider transition-all duration-200" onClick={() => setShowRejectReason(!showRejectReason)}>
+                     {showRejectReason ? 'CLOSE PANEL' : 'REJECT / EXCEPTION CHECK'}
                   </button>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-white/30">Select a submission to review</div>
+            <div className="flex-1 flex flex-col items-center justify-center text-white/30 font-mono gap-2">
+               <Video className="w-12 h-12 text-white/10 animate-pulse" />
+               <span>SELECT INTAKE QUEUE ITEM FOR DRM AUDITING</span>
+            </div>
           )}
         </div>
       </div>
