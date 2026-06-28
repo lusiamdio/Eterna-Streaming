@@ -13,6 +13,9 @@
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
+    "@mux/mux-data-chromecast": "^4.16.28",
+    "@mux/mux-data-react-native-video": "^0.19.20",
+    "@mux/mux-node": "^14.1.1",
     "@supabase/supabase-js": "^2.107.0",
     "@tailwindcss/vite": "^4.1.14",
     "@types/d3": "^7.4.3",
@@ -22,6 +25,7 @@
     "express": "^4.21.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.40.0",
+    "mux-embed": "^5.18.1",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "recharts": "^3.8.1",

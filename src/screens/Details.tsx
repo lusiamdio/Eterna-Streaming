@@ -3,7 +3,7 @@ import { useAppStore, Review } from "../lib/store";
 import { TopNav, BottomNav } from "../components/Navigation";
 // import { CATALOG } from "../lib/data";
 import { ContentCard } from "../components/Cards";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 import { fetchMainActors, fetchActorNews } from "../lib/api";
 
@@ -278,12 +278,56 @@ export function DetailsScreen() {
   const [filterGenre, setFilterGenre] = useState<string | null>(null);
   const [expandedEp, setExpandedEp] = useState<number | null>(null);
   const [isPip, setIsPip] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     setTrailerPlaying(false);
     const t = setTimeout(() => setTrailerPlaying(true), 800);
     return () => clearTimeout(t);
   }, [c?.id]);
+
+  // Monitor the trailer video with Mux Data
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !trailerPlaying) return;
+
+    let isCancelled = false;
+
+    import("mux-embed").then((muxModule) => {
+      if (isCancelled) return;
+      const mux = muxModule.default || muxModule;
+      const envKey = (import.meta as any).env.VITE_MUX_ENV_KEY || "YOUR_MUX_ENV_KEY";
+
+      try {
+        mux.monitor(video, {
+          debug: false,
+          data: {
+            env_key: envKey,
+            player_name: "Eterna Trailer Player",
+            player_version: "2.0.0",
+            video_id: `trailer_${c.id}`,
+            video_title: `${c.title} (Trailer)`,
+            video_stream_type: "on-demand",
+          },
+        });
+        console.log(`Mux Data monitoring initialized for trailer: ${c.title}`);
+      } catch (err) {
+        console.error("Mux trailer monitoring error:", err);
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+      try {
+        if (video && typeof (video as any).unload === "function") {
+          (video as any).unload();
+          console.log("Mux Data trailer monitoring unloaded");
+        }
+      } catch (err) {
+        console.error("Error unloading Mux trailer:", err);
+      }
+    };
+  }, [c?.id, trailerPlaying]);
 
   useEffect(() => {
     const handleScroll = (e: Event) => {
@@ -359,6 +403,7 @@ export function DetailsScreen() {
           <div className={`absolute inset-0 pointer-events-none overflow-hidden pb-4 ${isPip ? 'visible z-[100]' : 'z-0'}`}>
             {trailerPlaying ? (
               <video 
+                ref={videoRef}
                 autoPlay 
                 loop 
                 muted={heroMuted}

@@ -1438,6 +1438,380 @@ function AdManagement({ triggerWorkflow }: any) {
   );
 }
 
+function MuxIntegrationManager() {
+  const [status, setStatus] = useState<any>(null);
+  const [checking, setChecking] = useState(false);
+  const [assets, setAssets] = useState<any[]>([]);
+  const [fetchingAssets, setFetchingAssets] = useState(false);
+  
+  // Create video form
+  const [videoUrl, setVideoUrl] = useState('');
+  const [videoTitle, setVideoTitle] = useState('');
+  const [creatingAsset, setCreatingAsset] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [createSuccess, setCreateSuccess] = useState<any>(null);
+
+  const fetchStatus = async () => {
+    setChecking(true);
+    try {
+      const res = await fetch('/api/mux/status');
+      const data = await res.json();
+      setStatus(data);
+      if (data.connected) {
+        fetchAssets();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const fetchAssets = async () => {
+    setFetchingAssets(true);
+    try {
+      const res = await fetch('/api/mux/assets');
+      const data = await res.json();
+      if (data.assets) {
+        setAssets(data.assets);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setFetchingAssets(false);
+    }
+  };
+
+  const handleCreateAsset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!videoUrl) return;
+    setCreatingAsset(true);
+    setCreateError('');
+    setCreateSuccess(null);
+    try {
+      const res = await fetch('/api/mux/assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoUrl, title: videoTitle }),
+      });
+      const data = await res.json();
+      if (res.ok && data.asset) {
+        setCreateSuccess(data.asset);
+        setVideoUrl('');
+        setVideoTitle('');
+        eternaEventBus.emit('SUCCESS', 'Mux Video Asset Transcoding Initialized!');
+        fetchAssets();
+      } else {
+        setCreateError(data.error || 'Failed to initialize transcoding');
+      }
+    } catch (err: any) {
+      setCreateError(err.message || 'Network error');
+    } finally {
+      setCreatingAsset(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+  }, []);
+
+  return (
+    <div className="bg-[#090e1e] border border-[#00D9FF]/20 rounded-xl p-6 shadow-[0_0_20px_rgba(0,217,255,0.05)] text-white">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-[#00D9FF]/10">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="p-1.5 bg-[#00D9FF]/10 rounded-lg text-[#00D9FF]">
+              <Video className="w-5 h-5" />
+            </span>
+            <h2 className="text-xl font-bold tracking-tight text-white font-mono">Mux Video CDN Core</h2>
+          </div>
+          <p className="text-white/50 text-[13px]">Check credentials, monitor active transcoders, and run ingest tests on the Mux stream.</p>
+        </div>
+        <button 
+          onClick={fetchStatus} 
+          disabled={checking}
+          className="px-4 py-2 rounded-lg font-mono text-xs font-bold bg-[#00D9FF]/10 border border-[#00D9FF]/30 text-[#00D9FF] hover:bg-[#00D9FF]/20 active:scale-95 duration-100 disabled:opacity-50 flex items-center gap-2"
+        >
+          <Activity className={`w-3.5 h-3.5 ${checking ? 'animate-spin' : ''}`} />
+          {checking ? 'POLLING STATUS...' : 'RE-RUN CONNECTIVITY TESTS'}
+        </button>
+      </div>
+
+      {/* Connection State Info cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Connection Status Card */}
+        <div className="bg-[#11162d]/50 border border-[#00D9FF]/10 rounded-lg p-4 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest block mb-2">Authentication State</span>
+            {status ? (
+              status.connected ? (
+                <div>
+                  <div className="text-emerald-400 font-mono text-lg font-bold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-5 h-5 animate-pulse" />
+                    CONNECTED
+                  </div>
+                  <div className="text-xs text-white/60 mt-1.5 font-mono">Mux client initialized & successfully queried. Ready for playback & live streams.</div>
+                </div>
+              ) : (
+                <div>
+                  <div className="text-red-400 font-mono text-lg font-bold flex items-center gap-1.5">
+                    <XCircle className="w-5 h-5" />
+                    INCOMPLETE SETUP
+                  </div>
+                  <div className="text-xs text-white/60 mt-1.5 font-mono">Credentials are either missing or did not pass Mux API authorization tests.</div>
+                </div>
+              )
+            ) : (
+              <div className="text-white/40 text-sm font-mono animate-pulse">Running health check...</div>
+            )}
+          </div>
+          {status && status.message && (
+            <div className="mt-4 p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-mono text-[10px] rounded leading-relaxed">
+              {status.message}
+            </div>
+          )}
+          {status && status.error && (
+            <div className="mt-4 p-2.5 bg-red-500/10 border border-red-500/20 text-red-300 font-mono text-[10px] rounded leading-relaxed">
+              {status.error}
+            </div>
+          )}
+        </div>
+
+        {/* Detected Env Keys Card */}
+        <div className="bg-[#11162d]/50 border border-[#00D9FF]/10 rounded-lg p-4 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest block mb-3">Detected Credentials</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-2 rounded bg-black/30 border border-white/5">
+                <span className="font-mono text-[11px] text-white/60">Mux_api</span>
+                {status?.envVars?.Mux_api ? (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20">FOUND</span>
+                ) : (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 bg-white/5 text-white/30 rounded border border-white/5">EMPTY</span>
+                )}
+              </div>
+              <div className="flex items-center justify-between p-2 rounded bg-black/30 border border-white/5">
+                <span className="font-mono text-[11px] text-white/60">MUX_TOKEN_ID</span>
+                {status?.envVars?.MUX_TOKEN_ID ? (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20">FOUND</span>
+                ) : (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 bg-white/5 text-white/30 rounded border border-white/5">EMPTY</span>
+                )}
+              </div>
+              <div className="flex items-center justify-between p-2 rounded bg-black/30 border border-white/5">
+                <span className="font-mono text-[11px] text-white/60">MUX_TOKEN_SECRET</span>
+                {status?.envVars?.MUX_TOKEN_SECRET ? (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20">FOUND</span>
+                ) : (
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 bg-yellow-500/10 text-yellow-400 rounded border border-yellow-500/20">REQUIRED</span>
+                )}
+              </div>
+            </div>
+          </div>
+          <p className="text-[10px] text-white/40 mt-3 font-mono leading-relaxed">
+            Mux authenticates requests using Basic Auth over HTTPS with an **Access Token ID** (used as username) and **Secret Key** (used as password).
+          </p>
+        </div>
+
+        {/* Integration Instructions */}
+        <div className="bg-[#11162d]/50 border border-[#00D9FF]/10 rounded-lg p-4 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest block mb-2">Connection Setup Guide</span>
+            {status?.connected ? (
+              <div className="space-y-1.5 text-xs text-white/70">
+                <p className="font-semibold text-emerald-400">Everything looks great!</p>
+                <p>Eterna Streaming OS is fully synced with your Mux account. You can now use Eterna Studio or partner centers to upload films and stream instantly.</p>
+              </div>
+            ) : (
+              <div className="space-y-2 text-[11px] text-white/70">
+                <p>Please follow these steps to connect your Mux credentials:</p>
+                <ol className="list-decimal list-inside space-y-1 text-white/50 pl-1 font-mono text-[10px]">
+                  <li>Open Mux Settings &rarr; API Keys</li>
+                  <li>Create a token with Access permissions</li>
+                  <li>Paste ID into <b className="text-white">MUX_TOKEN_ID</b> (or Mux_api)</li>
+                  <li>Paste Secret into <b className="text-white">MUX_TOKEN_SECRET</b></li>
+                  <li>Re-run connectivity tests!</li>
+                </ol>
+              </div>
+            )}
+          </div>
+          <div className="mt-4 pt-3 border-t border-white/5 flex gap-2">
+            <a 
+              href="https://dashboard.mux.com" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="flex-1 text-center py-1.5 rounded bg-white/5 hover:bg-white/10 text-[11px] font-bold text-white transition-all border border-white/10"
+            >
+              Mux Dashboard &nearr;
+            </a>
+            <a 
+              href="https://docs.mux.com" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="flex-1 text-center py-1.5 rounded bg-[#00D9FF]/5 hover:bg-[#00D9FF]/10 text-[11px] font-bold text-[#00D9FF] transition-all border border-[#00D9FF]/20"
+            >
+              API Docs &nearr;
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {status?.connected && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 pt-6 border-t border-white/5">
+          {/* Create asset panel */}
+          <div className="bg-black/20 border border-white/5 rounded-lg p-4 flex flex-col justify-between">
+            <div>
+              <h3 className="font-bold text-sm text-[#00D9FF] mb-1 font-mono">Create Video Ingestion Asset</h3>
+              <p className="text-xs text-white/50 mb-4">Provide an external MP4/MOV URL. Mux will automatically download, transcode, and generate streaming-optimized HLS/Dash files.</p>
+              
+              <form onSubmit={handleCreateAsset} className="space-y-3">
+                <div>
+                  <label className="block text-[10px] font-mono text-white/40 uppercase mb-1">Asset Title (Passthrough)</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Cosmic Odyssey Trailer" 
+                    value={videoTitle}
+                    onChange={e => setVideoTitle(e.target.value)}
+                    className="w-full bg-[#111] border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00D9FF]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono text-white/40 uppercase mb-1">Source Video URL (Direct MP4 link)</label>
+                  <input 
+                    type="url" 
+                    placeholder="https://storage.googleapis.com/muxdemofiles/mux-video-intro.mp4" 
+                    value={videoUrl}
+                    onChange={e => setVideoUrl(e.target.value)}
+                    required
+                    className="w-full bg-[#111] border border-white/10 rounded px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-[#00D9FF]"
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={creatingAsset || !videoUrl}
+                  className="w-full py-2 bg-gradient-to-r from-[#00D9FF] to-[#3CAEFF] hover:opacity-90 active:scale-98 text-black font-bold text-xs rounded duration-100 disabled:opacity-50 flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,217,255,0.2)]"
+                >
+                  {creatingAsset ? (
+                    <>
+                      <Activity className="w-3.5 h-3.5 animate-spin" />
+                      SUBMITTING TO MUX CDN...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5" />
+                      INITIALIZE MUX TRANSCODER
+                    </>
+                  )}
+                </button>
+              </form>
+              
+              {createError && (
+                <div className="mt-3 p-2 bg-red-500/10 border border-red-500/20 text-red-400 font-mono text-[10px] rounded">
+                  Error: {createError}
+                </div>
+              )}
+
+              {createSuccess && (
+                <div className="mt-3 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded">
+                  <div className="font-bold text-xs mb-1 flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Transcoder Initiated!
+                  </div>
+                  <div className="font-mono text-[10px] text-white/60 space-y-0.5">
+                    <div>Asset ID: <span className="text-white">{createSuccess.id}</span></div>
+                    <div>Status: <span className="text-white uppercase font-bold text-yellow-400">{createSuccess.status}</span></div>
+                    <div>Wait a minute, then click refresh to view details.</div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-4 p-2 bg-white/5 border border-white/5 rounded text-[10px] text-white/40 font-mono leading-normal">
+              💡 <b>Tip:</b> Try using Mux's official sample MP4: <br/>
+              <span className="text-white/60 select-all font-bold">https://storage.googleapis.com/muxdemofiles/mux-video-intro.mp4</span>
+            </div>
+          </div>
+
+          {/* Active assets list */}
+          <div className="bg-black/20 border border-white/5 rounded-lg p-4 flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-sm text-[#00D9FF] font-mono">Synced Mux Video Assets</h3>
+              <button 
+                onClick={fetchAssets} 
+                disabled={fetchingAssets}
+                className="p-1 bg-white/5 hover:bg-white/10 rounded text-white/60 hover:text-white disabled:opacity-50"
+                title="Refresh Asset List"
+              >
+                <Activity className={`w-3.5 h-3.5 ${fetchingAssets ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto max-h-[280px] space-y-2 pr-1 no-scrollbar">
+              {fetchingAssets ? (
+                <div className="text-center py-8 text-xs font-mono text-white/40 animate-pulse">Fetching CDN assets from Mux...</div>
+              ) : assets.length === 0 ? (
+                <div className="text-center py-12 border border-dashed border-white/5 rounded-lg text-xs font-mono text-white/30">
+                  No video assets found in your Mux project. Use the panel on the left to upload your first movie file!
+                </div>
+              ) : (
+                assets.map((asset: any) => {
+                  const playbackId = asset.playback_ids?.[0]?.id;
+                  const isReady = asset.status === 'ready';
+                  return (
+                    <div key={asset.id} className="p-3 bg-black/40 border border-white/5 rounded flex justify-between items-start gap-4 hover:border-white/10 transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-xs truncate text-white">{asset.passthrough || "Untitled Asset"}</div>
+                        <div className="font-mono text-[9px] text-white/40 flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
+                          <span className="text-[#00D9FF]">ID: {asset.id}</span>
+                          {asset.duration && <span>Duration: {Math.round(asset.duration)}s</span>}
+                          {asset.aspect_ratio && <span>Ratio: {asset.aspect_ratio}</span>}
+                        </div>
+                        {playbackId && (
+                          <div className="mt-2 font-mono text-[9px] bg-black/50 p-1.5 rounded text-emerald-400 select-all border border-white/5 flex items-center justify-between">
+                            <span className="truncate">Playback ID: {playbackId}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="shrink-0 flex flex-col items-end gap-2">
+                        <span className={`text-[9px] font-mono font-black px-1.5 py-0.5 rounded ${isReady ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'} uppercase`}>
+                          {asset.status}
+                        </span>
+                        {playbackId && (
+                          <a 
+                            href={`https://stream.mux.com/${playbackId}.m3u8`} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="text-[9px] font-mono text-white/40 hover:text-white flex items-center gap-1 underline"
+                          >
+                            <Play className="w-2.5 h-2.5 text-emerald-400" /> Play HLS Stream
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Chromecast Receiver Info Footer */}
+      <div className="mt-6 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-xs font-mono">
+        <div className="flex items-center gap-2 text-white/50">
+          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+          <span>CHROMECAST MUX AGENT: ACTIVE</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-white/40">
+          <span>Receiver Application URL:</span>
+          <span className="text-[#00D9FF] bg-black/40 px-2 py-0.5 rounded border border-white/5 select-all">
+            {typeof window !== 'undefined' ? `${window.location.origin}/receiver.html` : '/receiver.html'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StreamingOperations({ triggerWorkflow }: any) {
   const cdnData = [
     { time: '10:00', bandwidth: 42.1, buffer: 0.5, viewers: 1.10 },
@@ -1548,7 +1922,7 @@ function StreamingOperations({ triggerWorkflow }: any) {
         </div>
       </div>
 
-      <div className="bg-[#111] border border-white/5 rounded-xl p-6">
+      <div className="bg-[#111] border border-white/5 rounded-xl p-6 mb-8">
          <h2 className="text-xl font-bold mb-4">Premium Live Events Hub</h2>
          <table className="w-full text-left text-[13px]">
           <thead className="bg-[#1a1a1a] text-white/50">
@@ -1564,6 +1938,9 @@ function StreamingOperations({ triggerWorkflow }: any) {
           </tbody>
         </table>
       </div>
+
+      {/* Mux Video CDN Integration & Diagnostics */}
+      <MuxIntegrationManager />
     </div>
   );
 }

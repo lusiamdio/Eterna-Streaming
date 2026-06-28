@@ -28,6 +28,52 @@ export function PlayerScreen() {
     }
   }, [c?.id]);
 
+  // Sync and monitor HTML5 Video element with Mux Data
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    let isCancelled = false;
+
+    import("mux-embed").then((muxModule) => {
+      if (isCancelled) return;
+      const mux = muxModule.default || muxModule;
+      // Fetch public Mux environment key from Vite environment, fallback to Mux_api or custom key
+      const envKey = (import.meta as any).env.VITE_MUX_ENV_KEY || "YOUR_MUX_ENV_KEY";
+
+      try {
+        mux.monitor(video, {
+          debug: false,
+          data: {
+            env_key: envKey,
+            player_name: "Eterna Web Player",
+            player_version: "2.0.0",
+            video_id: c.id?.toString() || "unknown",
+            video_title: c.title || "Untitled Video",
+            video_series: c.eps ? "Season 1" : undefined,
+            video_variant_name: c.eps ? "Episode 3" : "Film",
+            video_stream_type: "on-demand",
+          },
+        });
+        console.log(`Mux Data monitoring initialized for video: ${c.title}`);
+      } catch (err) {
+        console.error("Mux monitoring error:", err);
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+      try {
+        if (video && typeof (video as any).unload === "function") {
+          (video as any).unload();
+          console.log("Mux Data monitoring unloaded");
+        }
+      } catch (err) {
+        console.error("Error unloading Mux:", err);
+      }
+    };
+  }, [c?.id]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;

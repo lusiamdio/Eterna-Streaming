@@ -3,8 +3,9 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import Mux from "@mux/mux-node";
 
-dotenv.config();
+dotenv.config({ override: true });
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -20,6 +21,110 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  // Mux Video Integration & Diagnostics API
+  app.get("/api/mux/status", async (req, res) => {
+    const envVars = {
+      Mux_api: process.env.Mux_api ? `Present (length ${process.env.Mux_api.length}, prefix: ${process.env.Mux_api.substring(0, 4)}...)` : null,
+      MUX_TOKEN_ID: process.env.MUX_TOKEN_ID ? `Present (length ${process.env.MUX_TOKEN_ID.length}, prefix: ${process.env.MUX_TOKEN_ID.substring(0, 4)}...)` : null,
+      MUX_TOKEN_SECRET: process.env.MUX_TOKEN_SECRET ? `Present (length ${process.env.MUX_TOKEN_SECRET.length})` : null,
+    };
+
+    const tokenId = process.env.MUX_TOKEN_ID || process.env.Mux_api;
+    const tokenSecret = process.env.MUX_TOKEN_SECRET;
+
+    if (!tokenId || !tokenSecret) {
+      return res.json({
+        connected: false,
+        envVars,
+        error: "Incomplete credentials. Mux integration requires both MUX_TOKEN_ID (or Mux_api as Access Token ID) and MUX_TOKEN_SECRET.",
+        instructions: [
+          "Go to your Mux Dashboard (https://dashboard.mux.com) -> Settings -> API Keys.",
+          "Generate a new API Key with Access permissions (Video: Read/Write).",
+          "Add MUX_TOKEN_ID (or use Mux_api) and MUX_TOKEN_SECRET in your AI Studio environment settings.",
+          "Currently, Eterna detected Mux_api in your environment, which is likely your Mux Access Token ID. Please add MUX_TOKEN_SECRET to complete the connection."
+        ]
+      });
+    }
+
+    try {
+      const mux = new Mux({
+        tokenId,
+        tokenSecret,
+      });
+
+      // Test the credentials by listing assets (limit 1)
+      const assets = await mux.video.assets.list({ limit: 1 });
+      const assetsArray = Array.isArray(assets) ? assets : ((assets as any).data || []);
+      
+      res.json({
+        connected: true,
+        envVars,
+        message: "Successfully authenticated with Mux API!",
+        testResult: {
+          assetsCount: assetsArray.length,
+          assetsSample: assets
+        }
+      });
+    } catch (err: any) {
+      console.error("Mux test connection error:", err);
+      res.json({
+        connected: false,
+        envVars,
+        error: err.message || String(err),
+        instructions: [
+          "Verify that your Access Token ID (MUX_TOKEN_ID or Mux_api) is correct.",
+          "Verify that your Secret Key (MUX_TOKEN_SECRET) is correct.",
+          "Ensure your Mux API key has proper Video permissions."
+        ]
+      });
+    }
+  });
+
+  app.get("/api/mux/assets", async (req, res) => {
+    const tokenId = process.env.MUX_TOKEN_ID || process.env.Mux_api;
+    const tokenSecret = process.env.MUX_TOKEN_SECRET;
+
+    if (!tokenId || !tokenSecret) {
+      return res.status(400).json({ error: "Mux credentials not fully configured. Both Access Token ID and Secret are required." });
+    }
+
+    try {
+      const mux = new Mux({ tokenId, tokenSecret });
+      const assets = await mux.video.assets.list({ limit: 25 });
+      res.json({ assets });
+    } catch (err: any) {
+      console.error("Mux List Assets Error:", err);
+      res.status(500).json({ error: err.message || "Failed to list Mux assets" });
+    }
+  });
+
+  app.post("/api/mux/assets", async (req, res) => {
+    const tokenId = process.env.MUX_TOKEN_ID || process.env.Mux_api;
+    const tokenSecret = process.env.MUX_TOKEN_SECRET;
+
+    if (!tokenId || !tokenSecret) {
+      return res.status(400).json({ error: "Mux credentials not fully configured." });
+    }
+
+    const { videoUrl, title } = req.body;
+    if (!videoUrl) {
+      return res.status(400).json({ error: "videoUrl is required" });
+    }
+
+    try {
+      const mux = new Mux({ tokenId, tokenSecret });
+      const asset = await mux.video.assets.create({
+        inputs: [{ url: videoUrl }],
+        playback_policy: ["public"],
+        passthrough: title || "Eterna Asset"
+      });
+      res.json({ asset });
+    } catch (err: any) {
+      console.error("Mux Asset Creation Error:", err);
+      res.status(500).json({ error: err.message || "Failed to create Mux asset" });
+    }
+  });
 
   // API endpoints
   app.get("/api/movies/titles/:id/main_actors", async (req, res) => {
