@@ -392,3 +392,50 @@ BEGIN
   RETURN v_log_id;
 END;
 $$;
+
+-- 7. PAYMENT GATEWAY + SUBSCRIPTION SYNCHRONIZATION
+DO $$ BEGIN
+  CREATE TYPE public.payment_method AS ENUM ('visa', 'mastercard', 'amex', 'paypal', 'google_pay', 'apple_pay', 'mobile_money');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE public.payment_status AS ENUM ('requires_redirect', 'authorized', 'captured', 'failed', 'refunded');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  plan_id text not null,
+  subscription_level text not null,
+  status text not null default 'active',
+  current_period_start timestamp with time zone default timezone('utc'::text, now()) not null,
+  current_period_end timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(user_id, plan_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.payment_transactions (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete set null,
+  transaction_ref text unique not null,
+  provider text not null,
+  method public.payment_method not null,
+  amount numeric(12, 2) not null,
+  currency text default 'USD' not null,
+  status public.payment_status not null,
+  plan_id text not null,
+  subscription_id uuid references public.subscriptions(id) on delete set null,
+  details jsonb default '{}'::jsonb,
+  synced_systems text[] default ARRAY['normal_user','partner_platform','super_admin_command_centre'],
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payment_transactions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own subscriptions" ON public.subscriptions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Super Admins can manage all subscriptions" ON public.subscriptions FOR ALL USING (public.is_admin_or_super());
+CREATE POLICY "Users can view their own payment transactions" ON public.payment_transactions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Super Admins can audit all payment transactions" ON public.payment_transactions FOR SELECT USING (public.is_admin_or_super());
+CREATE POLICY "System can record payment transactions" ON public.payment_transactions FOR INSERT WITH CHECK (true);
