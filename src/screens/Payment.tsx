@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { useAppStore, useProfileSync } from '../lib/store';
 import { supabase } from '../lib/supabase';
-import { CreditCard, Lock, ShieldCheck, Check, MoreHorizontal } from 'lucide-react';
-import { EternaPaymentService, PaymentMethod } from '../lib/api';
+import { CreditCard, CheckCircle, Lock, ShieldCheck, Check, MoreHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export function PaymentScreen() {
   const { go, user, signIn, showToast } = useAppStore();
   const { verifyProfileSync } = useProfileSync();
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal' | 'apple' | 'google' | 'more'>('card');
-  const [cardNetwork, setCardNetwork] = useState<'visa' | 'mastercard' | 'amex'>('visa');
   const [localPayment, setLocalPayment] = useState<'mtn' | 'airtel' | 'orange' | 'mpesa'>('mtn');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -34,49 +32,37 @@ export function PaymentScreen() {
       }
     }
 
-    const method: PaymentMethod = paymentMethod === 'card'
-      ? cardNetwork
-      : paymentMethod === 'apple'
-        ? 'apple_pay'
-        : paymentMethod === 'google'
-          ? 'google_pay'
-          : paymentMethod === 'more'
-            ? 'mobile_money'
-            : 'paypal';
-
     setIsProcessing(true);
-
-    try {
-      const result = await EternaPaymentService.processPayment({
-        method,
-        planId: billingCycle === 'monthly' ? 'premium_monthly' : 'premium_yearly',
-        amount: billingCycle === 'monthly' ? 29 : 290,
-        currency: 'USD',
-        userId: user?.id,
-        userEmail: user?.email,
-        details: paymentMethod === 'card'
-          ? { cardNetwork, cardLast4: form.cardNum.replace(/\D/g, '').slice(-4), name: form.name, expiry: form.mmYy, zip: form.zip }
-          : { wallet: method, localPayment },
-        metadata: { source: 'normal_user_checkout', syncTargets: ['normal_user', 'partner_platform', 'super_admin_command_centre'] }
-      });
-
-      if (!result.success) throw new Error('Payment was not captured by the gateway.');
-
-      if (supabase && user?.id) {
-        await verifyProfileSync(user.id, user.role || 'normal');
-      }
-
-      if (user) {
-        signIn({ ...user, plan: result.subscriptionLevel || 'Premium' });
+    
+    // Simulate API call to payment gateway placeholder
+    setTimeout(async () => {
+      setIsProcessing(false);
+      
+      // Upgrade user profile
+      if (supabase && user) {
+        try {
+          // Initialize/Verify that role is set to premium correctly
+          await verifyProfileSync(user.id, 'premium');
+          
+          signIn({
+            ...user,
+            plan: 'Premium'
+          });
+        } catch (e) {
+          console.error("Failed to sync profile status:", e);
+        }
+      } else {
+        if (user) {
+          signIn({
+             ...user,
+             plan: 'Premium'
+          });
+        }
       }
 
       setShowSuccessModal(true);
-      showToast(`Payment ${result.transactionId} synced across all command centres.`);
-    } catch (e: any) {
-      setErr(e.message || 'Unable to process payment. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
+      showToast('Successfully upgraded to Premium!');
+    }, 1500);
   };
 
   const getFormatCardPreview = () => {
@@ -224,7 +210,7 @@ export function PaymentScreen() {
                          <div className="absolute -top-10 -right-10 w-64 h-64 bg-[#00A3FF] blur-[100px] opacity-30" />
                          <div className="flex justify-between items-start mb-8 relative z-10">
                            <div className="font-bold tracking-[0.2em] text-[#00A3FF]">ETERNA</div>
-                           <div className="font-bold italic text-xl uppercase">{cardNetwork === 'amex' ? 'AMEX' : cardNetwork}</div>
+                           <div className="font-bold italic text-xl">VISA</div>
                          </div>
                          <div className="text-xl md:text-2xl font-mono tracking-widest mb-6 relative z-10 opacity-90">{getFormatCardPreview()}</div>
                          <div className="flex justify-between items-end relative z-10 font-mono text-[10px] uppercase text-[#8c8c8c]">
@@ -237,14 +223,6 @@ export function PaymentScreen() {
                       </div>
 
                       {/* Floating Label Inputs */}
-                      <div className="flex flex-wrap gap-2 mb-6">
-                        {(['visa', 'mastercard', 'amex'] as const).map(network => (
-                          <button key={network} onClick={() => setCardNetwork(network)} className={`px-4 py-2 rounded-xl text-xs font-bold uppercase border transition-all ${cardNetwork === network ? 'border-[#00A3FF] bg-[#00A3FF]/10 text-[#00A3FF]' : 'border-white/[0.08] text-[#8c8c8c]'}`}>
-                            {network === 'amex' ? 'American Express' : network}
-                          </button>
-                        ))}
-                      </div>
-
                       <div className="space-y-5">
                         <div className="relative group">
                           <input type="text" id="name" required value={form.name} onChange={e=>setForm({...form, name: e.target.value})} className="peer w-full bg-transparent border-b border-white/[0.08] px-0 py-3 text-sm outline-none focus:border-[#00A3FF] transition-colors placeholder-transparent focus:placeholder-[#8c8c8c]" placeholder="John Doe" />

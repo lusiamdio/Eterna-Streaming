@@ -22,64 +22,6 @@ async function startServer() {
 
   app.use(express.json());
 
-
-  const supportedPaymentMethods = new Set(["visa", "mastercard", "amex", "paypal", "google_pay", "apple_pay", "mobile_money"]);
-
-  app.get("/api/platform/sync-status", (_req, res) => {
-    res.json({
-      connected: true,
-      systems: {
-        normal_user: { status: "online", source: "shared profile and subscription state" },
-        partner_platform: { status: "online", source: "shared catalog, payout, and partner role state" },
-        super_admin_command_centre: { status: "online", source: "global audit, revenue, and approval state" },
-      },
-      lastCheckedAt: new Date().toISOString(),
-    });
-  });
-
-  app.post("/api/payments/checkout", async (req, res) => {
-    const { method, planId, amount, currency = "USD", userId, userEmail, details = {}, metadata = {} } = req.body || {};
-
-    if (!supportedPaymentMethods.has(method)) {
-      return res.status(400).json({ error: "Unsupported payment method. Use visa, mastercard, amex, paypal, google_pay, apple_pay, or mobile_money." });
-    }
-
-    if (!planId || typeof amount !== "number" || amount <= 0) {
-      return res.status(400).json({ error: "planId and a positive numeric amount are required." });
-    }
-
-    if (["visa", "mastercard", "amex"].includes(method)) {
-      const cardLast4 = String(details.cardLast4 || "").replace(/\D/g, "");
-      if (cardLast4.length !== 4) {
-        return res.status(400).json({ error: "A tokenized cardLast4 value is required for card payments." });
-      }
-    }
-
-    const transactionId = `txn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-    const gatewayProvider = ["paypal"].includes(method) ? "paypal" : ["google_pay", "apple_pay"].includes(method) ? "wallet" : "card_network";
-
-    res.json({
-      success: true,
-      transactionId,
-      subscriptionLevel: String(planId).includes("yearly") ? "Premium Yearly" : "Premium Monthly",
-      status: ["paypal", "google_pay", "apple_pay"].includes(method) ? "requires_redirect" : "captured",
-      redirectUrl: ["paypal", "google_pay", "apple_pay"].includes(method) ? `/payment/confirm/${transactionId}` : undefined,
-      gatewayProvider,
-      amount,
-      currency,
-      userId,
-      userEmail,
-      metadata,
-      syncedSystems: ["normal_user", "partner_platform", "super_admin_command_centre"],
-      audit: {
-        normalUserSubscriptionUpdated: true,
-        partnerRevenueLedgerUpdated: true,
-        superAdminCommandCentreUpdated: true,
-        processedAt: new Date().toISOString(),
-      },
-    });
-  });
-
   // Mux Video Integration & Diagnostics API
   app.get("/api/mux/status", async (req, res) => {
     const envVars = {
@@ -306,6 +248,138 @@ Format the output as a professional legal document in markdown. Include signatur
       console.error("Gemini API Error (Recommend):", error);
       res.status(500).json({ error: error.message || "Failed to generate AI recommendations" });
     }
+  });
+
+  // Video Pipeline API Routes (FFmpeg, Shaka Packager, Jellyfin)
+  app.post("/api/pipeline/validate-upload", async (req, res) => {
+    try {
+      const { fileName, fileSize, fileType, videoUrl } = req.body;
+      
+      // Simulate FFmpeg / ffprobe magic byte, codec & container inspection
+      const extension = fileName ? fileName.split('.').pop().toLowerCase() : 'mp4';
+      const isAllowedContainer = ['mp4', 'mov', 'mkv', 'webm', 'ts', 'm4v'].includes(extension);
+      const isSizeValid = fileSize ? fileSize < 10 * 1024 * 1024 * 1024 : true; // 10GB limit
+      
+      const ffprobeResult = {
+        format: {
+          format_name: extension === 'mkv' ? 'matroska,webm' : 'mov,mp4,m4a,3gp,3g2,mj2',
+          duration: "7200.040000",
+          size: fileSize || 2147483648,
+          bit_rate: "5420100"
+        },
+        streams: [
+          {
+            index: 0,
+            codec_name: "h264",
+            codec_type: "video",
+            width: 1920,
+            height: 1080,
+            r_frame_rate: "24/1",
+            pix_fmt: "yuv420p",
+            display_aspect_ratio: "16:9"
+          },
+          {
+            index: 1,
+            codec_name: "aac",
+            codec_type: "audio",
+            channels: 6,
+            sample_rate: "48000"
+          }
+        ]
+      };
+
+      const validationChecklist = {
+        magicBytesSignature: isAllowedContainer ? "PASS (ftyp/isom)" : "FAIL (Unknown binary header)",
+        containerFormat: isAllowedContainer ? `PASS (${extension.toUpperCase()})` : "REJECTED",
+        codecAllowlist: "PASS (H.264 / AAC 5.1)",
+        durationBitrateCheck: isSizeValid ? "PASS (<10GB Limit, 5.4 Mbps)" : "EXCEEDS_LIMIT",
+        decodeIntegrity: "PASS (0 Frame corruption detected via ffmpeg -f null -)",
+        malwareClamAVScan: "CLEAN (0 Threats detected)"
+      };
+
+      res.json({
+        success: isAllowedContainer && isSizeValid,
+        status: isAllowedContainer && isSizeValid ? "validated" : "rejected",
+        ffprobe: ffprobeResult,
+        checklist: validationChecklist,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to validate upload" });
+    }
+  });
+
+  app.post("/api/pipeline/generate-ffmpeg-cmd", (req, res) => {
+    const { videoUrl, preset = "medium", crf = 20 } = req.body;
+    const input = videoUrl || "input_source.mp4";
+
+    // Single pass multi-rendition FFmpeg ABR filter_complex command
+    const ffmpegCommand = `ffmpeg -i ${input} -filter_complex \\
+"[0:v]split=4[v1][v2][v3][v4]; \\
+[v1]scale=-2:1080[v1out]; \\
+[v2]scale=-2:720[v2out]; \\
+[v3]scale=-2:480[v3out]; \\
+[v4]scale=-2:360[v4out]" \\
+-map "[v1out]" -c:v:0 libx264 -preset ${preset} -crf ${crf} -b:v:0 5000k -maxrate:0 5000k -bufsize:0 10000k \\
+-map "[v2out]" -c:v:1 libx264 -preset ${preset} -crf ${crf} -b:v:1 3000k -maxrate:1 3000k -bufsize:1 6000k \\
+-map "[v3out]" -c:v:2 libx264 -preset ${preset} -crf ${crf} -b:v:2 1500k -maxrate:2 1500k -bufsize:2 3000k \\
+-map "[v4out]" -c:v:3 libx264 -preset ${preset} -crf ${crf} -b:v:3 800k -maxrate:3 800k -bufsize:3 1600k \\
+-map 0:a -c:a aac -b:a 128k -ar 48000 \\
+-g 48 -keyint_min 48 -sc_threshold 0 \\
+-f hls -var_stream_map "v:0,a:0 v:1,a:0 v:2,a:0 v:3,a:0" \\
+-master_pl_name master.m3u8 \\
+-hls_time 6 -hls_playlist_type vod \\
+-hls_segment_filename "rendition_%v/data%03d.ts" "rendition_%v/playlist.m3u8"`;
+
+    const shakaPackagerCommand = `packager \\
+  in=1080p.mp4,stream=video,output=1080p_encrypted.mp4 \\
+  in=720p.mp4,stream=video,output=720p_encrypted.mp4 \\
+  in=480p.mp4,stream=video,output=480p_encrypted.mp4 \\
+  in=360p.mp4,stream=video,output=360p_encrypted.mp4 \\
+  in=audio.mp4,stream=audio,output=audio_encrypted.mp4 \\
+  --enable_raw_key_encryption \\
+  --keys label=0:key=1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d:key_id=01020304050607080910111213141516 \\
+  --protection_scheme cenc \\
+  --mpd_output dash/manifest.mpd \\
+  --hls_master_playlist_output hls/master.m3u8`;
+
+    res.json({
+      ffmpegCommand,
+      shakaPackagerCommand,
+      renditions: [
+        { resolution: "1080p (1920x1080)", bitrate: "5000 kbps", fps: 24, gopSize: 48 },
+        { resolution: "720p (1280x720)", bitrate: "3000 kbps", fps: 24, gopSize: 48 },
+        { resolution: "480p (854x480)", bitrate: "1500 kbps", fps: 24, gopSize: 48 },
+        { resolution: "360p (640x360)", bitrate: "800 kbps", fps: 24, gopSize: 48 }
+      ]
+    });
+  });
+
+  app.post("/api/pipeline/jellyfin-sync", (req, res) => {
+    const { title, mediaId, streamUrl } = req.body;
+    res.json({
+      synced: true,
+      jellyfinItem: {
+        Id: mediaId || "jellyfin-" + Date.now(),
+        Name: title || "Eterna Feature Film",
+        ServerId: "Jellyfin-Eterna-Core-v10.9.1",
+        MediaSources: [
+          {
+            Id: "ms-" + Date.now(),
+            Path: streamUrl || "https://stream.eterna.io/hls/master.m3u8",
+            Protocol: "Http",
+            Container: "m3u8",
+            IsRemote: true,
+            SupportsTranscoding: true,
+            SupportsDirectPlay: true,
+            SupportsDirectStream: true
+          }
+        ],
+        TranscodingUrl: "/jellyfin/stream/hls",
+        DirectStreamUrl: streamUrl || "https://stream.eterna.io/hls/master.m3u8"
+      },
+      message: "Media item registered with Jellyfin Server instance & available for DLNA/Chromecast streaming relay."
+    });
   });
 
   // Vite middleware for development

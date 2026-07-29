@@ -12,37 +12,23 @@ export const fetchActorNews = async (actorId: string) => {
   return data.data?.news?.edges?.map((e: any) => e.node) || [];
 };
 
-export type PaymentMethod = 'visa' | 'mastercard' | 'amex' | 'paypal' | 'google_pay' | 'apple_pay' | 'mobile_money';
-
-export interface PaymentRequest {
-  method: PaymentMethod;
-  planId: 'premium_monthly' | 'premium_yearly' | string;
-  amount: number;
-  currency: string;
-  userId?: string;
-  userEmail?: string;
-  metadata?: Record<string, unknown>;
-  details?: Record<string, unknown>;
-}
-
-export interface PaymentResult {
-  success: boolean;
-  transactionId: string;
-  subscriptionLevel: string;
-  status: 'requires_redirect' | 'authorized' | 'captured' | 'failed';
-  redirectUrl?: string;
-  syncedSystems: Array<'normal_user' | 'partner_platform' | 'super_admin_command_centre'>;
-}
-
+// This acts as our mock backend service for payment processing
 export class EternaPaymentService {
-  static async processPayment(data: PaymentRequest): Promise<PaymentResult> {
-    const res = await fetch('/api/payments/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+  static async processPayment(data: {
+    method: 'card' | 'paypal' | 'mobile_money',
+    planId: string,
+    amount: number,
+    details: any
+  }): Promise<{ success: boolean; transactionId: string; subscriptionLevel: string }> {
+    // Simulate network delay and handshake with payment gateway
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          transactionId: 'txn_' + Math.random().toString(36).substr(2, 9),
+          subscriptionLevel: data.planId
+        });
+      }, 2500);
     });
-    const payload = await res.json();
-    if (!res.ok) throw new Error(payload.error || 'Failed to process payment');
-    return payload;
   }
 }

@@ -81,9 +81,13 @@ CREATE TABLE IF NOT EXISTS public.content (
   description text,
   cover_url text,
   video_url text,
+  hls_manifest_url text,
+  dash_manifest_url text,
   trailer_url text,
   content_type public.content_type not null default 'movie',
   status public.content_status not null default 'draft',
+  transcode_status text default 'pending', -- 'pending', 'validating', 'transcoding', 'ready', 'failed'
+  drm_protected boolean default false,
   release_year integer,
   rating text,
   genres text[],
@@ -225,6 +229,47 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- M. VIDEO TRANSCODING & ENCODING JOBS PIPELINE
+-- Tracks pre-transcode validation, FFmpeg ABR processing, and Shaka DRM packaging.
+CREATE TABLE IF NOT EXISTS public.video_encoding_jobs (
+  id uuid default gen_random_uuid() primary key,
+  content_id uuid references public.content(id) on delete cascade not null,
+  upload_id text not null,
+  raw_source_bucket text not null,
+  raw_source_key text not null,
+  status text not null default 'uploaded', -- 'uploaded', 'validating', 'transcoding', 'ready', 'failed'
+  progress_percentage integer default 0,
+  preset text default 'medium',
+  crf integer default 20,
+  validation_results jsonb, -- Stores ffprobe inspection, codec verification, and malware scan output
+  master_hls_url text,
+  master_dash_url text,
+  error_message text,
+  worker_id text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- N. MUX DATA & CHROMECAST QUALITY OF EXPERIENCE (QoE) TELEMETRY
+-- Logs video performance metrics, rebuffer events, and startup latency for Mux & Chromecast.
+CREATE TABLE IF NOT EXISTS public.player_qoe_telemetry (
+  id uuid default gen_random_uuid() primary key,
+  content_id uuid references public.content(id) on delete set null,
+  user_id uuid references public.profiles(id) on delete set null,
+  view_id text not null,
+  player_name text default 'Eterna Web Player',
+  player_version text,
+  device_model text,
+  startup_time_ms integer,
+  rebuffer_count integer default 0,
+  total_rebuffer_duration_ms integer default 0,
+  avg_bitrate_kbps integer,
+  error_code text,
+  error_message text,
+  beacon_domain text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 
 -- 4. ENABLE ROW LEVEL SECURITY (RLS) FOR SYSTEM HARDENING
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -239,6 +284,8 @@ ALTER TABLE public.license_agreements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.treasury_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payout_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.video_encoding_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.player_qoe_telemetry ENABLE ROW LEVEL SECURITY;
 
 
 -- 5. RLS SECURITY POLICIES FOR UNMATCHED ACCESS CONTROL
@@ -333,6 +380,20 @@ CREATE POLICY "Super Admins can initiate or manage payouts" ON public.payout_tra
 CREATE POLICY "Super Admins can read system audit logs" ON public.audit_logs FOR SELECT USING (public.is_admin_or_super());
 CREATE POLICY "System can record audit logs" ON public.audit_logs FOR INSERT WITH CHECK (true);
 
+-- M. ENCODING JOBS RLS
+CREATE POLICY "Partners can view encoding jobs for owned content" ON public.video_encoding_jobs FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.content c WHERE c.id = video_encoding_jobs.content_id AND c.creator_id = auth.uid())
+);
+CREATE POLICY "Super Admins can manage all video encoding jobs" ON public.video_encoding_jobs FOR ALL USING (public.is_admin_or_super());
+CREATE POLICY "System workers can update encoding jobs" ON public.video_encoding_jobs FOR ALL USING (true);
+
+-- N. PLAYER QoE TELEMETRY RLS
+CREATE POLICY "Users can insert telemetry logs" ON public.player_qoe_telemetry FOR INSERT WITH CHECK (true);
+CREATE POLICY "Super Admins can inspect player QoE telemetry" ON public.player_qoe_telemetry FOR SELECT USING (public.is_admin_or_super());
+CREATE POLICY "Partners can inspect QoE telemetry for owned content" ON public.player_qoe_telemetry FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.content c WHERE c.id = player_qoe_telemetry.content_id AND c.creator_id = auth.uid())
+);
+
 
 -- 6. AUTOMATED IDENTITY MANAGEMENT TRIGGERS
 
@@ -392,50 +453,3 @@ BEGIN
   RETURN v_log_id;
 END;
 $$;
-
--- 7. PAYMENT GATEWAY + SUBSCRIPTION SYNCHRONIZATION
-DO $$ BEGIN
-  CREATE TYPE public.payment_method AS ENUM ('visa', 'mastercard', 'amex', 'paypal', 'google_pay', 'apple_pay', 'mobile_money');
-EXCEPTION WHEN duplicate_object THEN null; END $$;
-
-DO $$ BEGIN
-  CREATE TYPE public.payment_status AS ENUM ('requires_redirect', 'authorized', 'captured', 'failed', 'refunded');
-EXCEPTION WHEN duplicate_object THEN null; END $$;
-
-CREATE TABLE IF NOT EXISTS public.subscriptions (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references public.profiles(id) on delete cascade not null,
-  plan_id text not null,
-  subscription_level text not null,
-  status text not null default 'active',
-  current_period_start timestamp with time zone default timezone('utc'::text, now()) not null,
-  current_period_end timestamp with time zone,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  unique(user_id, plan_id)
-);
-
-CREATE TABLE IF NOT EXISTS public.payment_transactions (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references public.profiles(id) on delete set null,
-  transaction_ref text unique not null,
-  provider text not null,
-  method public.payment_method not null,
-  amount numeric(12, 2) not null,
-  currency text default 'USD' not null,
-  status public.payment_status not null,
-  plan_id text not null,
-  subscription_id uuid references public.subscriptions(id) on delete set null,
-  details jsonb default '{}'::jsonb,
-  synced_systems text[] default ARRAY['normal_user','partner_platform','super_admin_command_centre'],
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
-ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.payment_transactions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view their own subscriptions" ON public.subscriptions FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Super Admins can manage all subscriptions" ON public.subscriptions FOR ALL USING (public.is_admin_or_super());
-CREATE POLICY "Users can view their own payment transactions" ON public.payment_transactions FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Super Admins can audit all payment transactions" ON public.payment_transactions FOR SELECT USING (public.is_admin_or_super());
-CREATE POLICY "System can record payment transactions" ON public.payment_transactions FOR INSERT WITH CHECK (true);

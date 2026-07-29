@@ -93,7 +93,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     catalog: [...CATALOG],
   });
 
-  const [toastTimeoutId, setToastTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [toastTimeoutId, setToastTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
   const publishContent = async (c: Content) => {
     if (supabase && state.user) {
@@ -166,7 +166,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       let role = 'normal';
       
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', sessionUser.id).single();
-      if (profile && ['normal', 'pending_partner', 'partner', 'super_admin'].includes(profile.role)) {
+      if (profile && profile.role) {
         role = profile.role;
       }
       
@@ -364,24 +364,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 export const useProfileSync = () => {
   const verifyProfileSync = async (userId: string, targetRole: string) => {
     if (!supabase) return;
-    const validRoles = ['normal', 'pending_partner', 'partner', 'super_admin'];
-    const safeRole = validRoles.includes(targetRole) ? targetRole : 'normal';
-    console.log(`[ProfileSync] Verifying synchronization for user ${userId} with assigned role '${safeRole}'...`);
+    console.log(`[ProfileSync] Verifying synchronization for user ${userId} with assigned role '${targetRole}'...`);
     try {
       const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
       if (error) {
         console.warn(`[ProfileSync] Profile not found for ${userId}. Attempting creation... Error: ${error.message}`);
-        const { error: insertError } = await supabase.from('profiles').insert([{ id: userId, role: safeRole }]);
+        const { error: insertError } = await supabase.from('profiles').insert([{ id: userId, role: targetRole }]);
         if (insertError) {
           console.error(`[ProfileSync] Failed to create profile: ${insertError.message}`);
         } else {
-          console.log(`[ProfileSync] Recovery successful. Profile created for ${userId} with role '${safeRole}'.`);
+          console.log(`[ProfileSync] Recovery successful. Profile created for ${userId} with role '${targetRole}'.`);
         }
       } else {
-        console.log(`[ProfileSync] Profile found. Existing role: ${data.role}. Matching against intended role '${safeRole}'.`);
-        if (data.role !== safeRole) {
-           console.log(`[ProfileSync] Role mismatch. Updating role from '${data.role}' to '${safeRole}'...`);
-           await supabase.from('profiles').update({ role: safeRole }).eq('id', userId);
+        console.log(`[ProfileSync] Profile found. Existing role: ${data.role}. Matching against intended role '${targetRole}'.`);
+        if (data.role !== targetRole) {
+           console.log(`[ProfileSync] Role mismatch. Updating role from '${data.role}' to '${targetRole}'...`);
+           await supabase.from('profiles').update({ role: targetRole }).eq('id', userId);
         } else {
            console.log(`[ProfileSync] Sync verified successfully. Roles match.`);
         }
